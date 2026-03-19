@@ -7,17 +7,24 @@ services:
       POSTGRES_PASSWORD: polok
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U polok -d polok"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
 
   app:
     build: .
     ports:
       - "8002:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql+asyncpg://polok:polok@db:5432/polok
     env_file:
-      - .env
+      - path: .env
+        required: false
 
 volumes:
   pgdata:
