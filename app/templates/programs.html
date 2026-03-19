@@ -8,8 +8,6 @@
     <strong>Let op:</strong> Deze programma's zijn automatisch verzameld via webscraping en gecontroleerd met AI. Hoewel we ons best doen voor nauwkeurigheid, kunnen er fouten in de data zitten: verkeerde toewijzingen, ontbrekende programma's of foutieve kwaliteitsbeoordelingen. Controleer belangrijke gegevens altijd bij de bron.
 </div>
 
-<div id="stats-bar" class="stats"></div>
-
 <div class="filters">
     <div class="filter-group">
         <label data-t="zoeken">Zoeken</label>
@@ -114,18 +112,6 @@ function renderPag(container, total, page, perPage, totalPages) {
     next.onclick = function(){currentPage=page+1;loadPrograms();}; container.appendChild(next);
 }
 
-async function loadStats() {
-    try {
-        var s = await (await fetch('/_data/programmas/stats')).json();
-        var bar = document.getElementById('stats-bar'); clearEl(bar);
-        [{l:t('totaal_programmas')+': '+s.totaal_programmas,c:''},{l:t('goedgekeurd')+': '+s.goedgekeurd,c:''},
-         {l:t('afgekeurd')+': '+s.afgekeurd,c:''},{l:t('onzeker')+': '+s.onzeker,c:''},
-         {l:t('totaal_partijen')+': '+s.totaal_partijen,c:''}].forEach(function(i){
-            var d=document.createElement('span'); d.className='stat'; d.textContent=i.l; bar.appendChild(d);
-        });
-    } catch(e){}
-}
-
 function renderRows(rows) {
     var tbody = document.getElementById('programs-body'); clearEl(tbody);
     rows.forEach(function(r){
@@ -216,8 +202,8 @@ function copyText(){
     });
 }
 
-function onLangChange(){ loadStats(); loadPrograms(); updateLangUI(); }
+function onLangChange(){ loadPrograms(); updateLangUI(); }
 document.getElementById('filter-search').addEventListener('keydown',function(e){ if(e.key==='Enter'){currentPage=1;loadPrograms();}});
-loadStats(); loadPrograms();
+loadPrograms();
 </script>
 {% endblock %}
