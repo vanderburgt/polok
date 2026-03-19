@@ -88,7 +88,7 @@ function renderRows(rows) {
     rows.forEach(function(r){
         var tr = document.createElement('tr');
         var nc = cel(r[0]);
-        if(r[5]){ var b=document.createElement('span'); b.style.cssText='font-size:0.6875rem;color:var(--text-muted);margin-left:4px'; b.textContent='('+t('coalitie')+')'; nc.appendChild(b); }
+        if(r[5]){ var b=document.createElement('span'); b.style.cssText='font-size:0.6875rem;color:#666;margin-left:4px'; b.textContent='('+t('coalitie')+')'; nc.appendChild(b); }
         tr.appendChild(nc);
         tr.appendChild(cel(r[1]));
         tr.appendChild(cel(r[2]||'-'));
@@ -101,7 +101,7 @@ function renderRows(rows) {
         tr.appendChild(wc);
 
         var pc = document.createElement('td');
-        if(r[4]){ var s=document.createElement('span'); s.style.color='var(--green)'; s.style.fontWeight='600'; s.textContent=t('ja'); pc.appendChild(s); }
+        if(r[4]){ var s=document.createElement('span'); s.style.color='#000'; s.style.fontWeight='600'; s.textContent=t('ja'); pc.appendChild(s); }
         else { pc.textContent='-'; }
         tr.appendChild(pc);
 

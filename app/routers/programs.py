@@ -252,6 +252,6 @@ async def programs_page(request: Request, db: AsyncSession = Depends(get_db)):
     return templates.TemplateResponse("programs.html", {"request": request})
 
 
-@router.get("/kaart", response_class=HTMLResponse, include_in_schema=False)
-async def map_page(request: Request):
-    return templates.TemplateResponse("map.html", {"request": request})
+@router.get("/data", response_class=HTMLResponse, include_in_schema=False)
+async def data_page(request: Request):
+    return templates.TemplateResponse("data.html", {"request": request})

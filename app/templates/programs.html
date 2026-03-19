@@ -119,10 +119,10 @@ async function loadStats() {
     try {
         var s = await (await fetch('/_data/programmas/stats')).json();
         var bar = document.getElementById('stats-bar'); clearEl(bar);
-        [{l:t('totaal_programmas')+': '+s.totaal_programmas,c:''},{l:t('goedgekeurd')+': '+s.goedgekeurd,c:'stat-pass'},
-         {l:t('afgekeurd')+': '+s.afgekeurd,c:'stat-fail'},{l:t('onzeker')+': '+s.onzeker,c:'stat-uncertain'},
+        [{l:t('totaal_programmas')+': '+s.totaal_programmas,c:''},{l:t('goedgekeurd')+': '+s.goedgekeurd,c:''},
+         {l:t('afgekeurd')+': '+s.afgekeurd,c:''},{l:t('onzeker')+': '+s.onzeker,c:''},
          {l:t('totaal_partijen')+': '+s.totaal_partijen,c:''}].forEach(function(i){
-            var d=document.createElement('span'); d.className='stat '+i.c; d.textContent=i.l; bar.appendChild(d);
+            var d=document.createElement('span'); d.className='stat'; d.textContent=i.l; bar.appendChild(d);
         });
     } catch(e){}
 }
@@ -137,7 +137,7 @@ function renderRows(rows) {
         var qc = document.createElement('td');
         if(r[4]){
             var b=document.createElement('span');
-            b.className='badge badge-'+r[4];
+            b.className='badge';
             b.textContent={pass:t('goedgekeurd'),fail:t('afgekeurd'),uncertain:t('onzeker')}[r[4]]||r[4];
             qc.appendChild(b);
         } else { qc.textContent='-'; }
@@ -147,11 +147,12 @@ function renderRows(rows) {
         r[5].forEach(function(c){
             var i=document.createElement('span'); i.className='qc-icon'; i.title=c.t;
             i.textContent = c.v===true?'\u2713':c.v===false?'\u2717':'\u2014';
-            i.style.color = c.v===true?'var(--green)':c.v===false?'var(--red)':'var(--text-muted)';
+            i.style.color = c.v===true?'#000':c.v===false?'#000':'#999';
+            i.style.fontWeight = c.v===true?'700':c.v===false?'700':'400';
             cc.appendChild(i);
         });
         if(r[6]){
-            var nb=document.createElement('button'); nb.style.cssText='background:none;border:none;color:var(--blue);cursor:pointer;font-size:0.6875rem;margin-left:4px';
+            var nb=document.createElement('button'); nb.style.cssText='background:none;border:none;color:#000;cursor:pointer;font-size:0.6875rem;margin-left:4px;text-decoration:underline';
             nb.textContent=t('notities'); nb.onclick=function(){
                 document.getElementById('qc-modal-title').textContent=r[0]+' - '+t('qc_notities');
                 document.getElementById('qc-modal-text').textContent=r[6];
@@ -165,7 +166,7 @@ function renderRows(rows) {
             var a=document.createElement('a'); a.href=r[7]; a.target='_blank'; a.rel='noopener noreferrer'; a.textContent=t('bron'); ac.appendChild(a);
         }
         if(r[8]){
-            var tb=document.createElement('button'); tb.style.cssText='background:none;border:none;color:var(--blue);cursor:pointer;font-size:0.8125rem;margin-left:8px';
+            var tb=document.createElement('button'); tb.style.cssText='background:none;border:none;color:#000;cursor:pointer;font-size:0.8125rem;margin-left:8px;text-decoration:underline';
             tb.textContent=t('tekst'); tb.onclick=function(){viewText(r[8],r[0]||'');}; ac.appendChild(tb);
         }
         tr.appendChild(ac);

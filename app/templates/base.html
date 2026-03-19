@@ -6,16 +6,14 @@
     <title>{% block title %}Polok{% endblock %}</title>
     <style>
         :root {
-            --blue: #3737fa;
-            --blue-light: #eef0ff;
-            --bg: #eef0ff;
-            --text: #1a1a3e;
-            --text-muted: #6b6b8d;
-            --border: #c8c8e6;
+            --black: #000;
             --white: #fff;
-            --green: #1a8a4a;
-            --red: #c43333;
-            --yellow: #9a7a1a;
+            --grey: #666;
+            --grey-light: #e0e0e0;
+            --bg: #fff;
+            --text: #000;
+            --text-muted: #666;
+            --border: #000;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -24,7 +22,7 @@
             min-height: 100vh; display: flex; flex-direction: column;
             -webkit-font-smoothing: antialiased;
         }
-        a { color: var(--blue); text-decoration: none; }
+        a { color: var(--black); text-decoration: none; }
         a:hover { text-decoration: underline; }
 
         /* NAV */
@@ -35,8 +33,8 @@
         .nav-links { display: flex; align-items: center; gap: 1.5rem; }
         .nav-links a { color: var(--text-muted); font-size: 0.875rem; }
         .nav-links a:hover, .nav-links a.active { color: var(--text); text-decoration: none; }
-        .lang-btn { font-size: 0.75rem; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; background: none; color: var(--text-muted); cursor: pointer; }
-        .lang-btn:hover { color: var(--text); border-color: var(--text-muted); }
+        .lang-btn { font-size: 0.75rem; border: 1px solid var(--border); border-radius: 0; padding: 2px 8px; background: none; color: var(--text-muted); cursor: pointer; }
+        .lang-btn:hover { color: var(--text); border-color: var(--text); }
         .gh-link { display: flex; align-items: center; }
         .gh-link svg { width: 20px; height: 20px; fill: var(--text-muted); transition: fill 0.15s; }
         .gh-link:hover svg { fill: var(--text); }
@@ -48,66 +46,60 @@
 
         /* STATS */
         .stats { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
-        .stat { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 500; }
-        .stat-pass { border-color: #a3d9b1; color: var(--green); }
-        .stat-fail { border-color: #e6a3a3; color: var(--red); }
-        .stat-uncertain { border-color: #e6d9a3; color: var(--yellow); }
+        .stat { background: var(--white); border: 1px solid var(--border); border-radius: 0; padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 500; color: var(--text); }
 
         /* FILTERS */
         .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1.5rem; }
         .filter-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
         .filter-group input, .filter-group select {
-            border: 1px solid var(--border); border-radius: 4px; padding: 0.45rem 0.6rem;
+            border: 1px solid var(--border); border-radius: 0; padding: 0.45rem 0.6rem;
             font-size: 0.8125rem; background: var(--white); color: var(--text); font-family: inherit;
         }
-        .filter-group input:focus, .filter-group select:focus { outline: none; border-color: var(--blue); }
+        .filter-group input:focus, .filter-group select:focus { outline: none; border-color: var(--black); box-shadow: 0 0 0 1px var(--black); }
         .filter-btn {
-            background: var(--blue); color: var(--white); border: none; border-radius: 4px;
+            background: var(--black); color: var(--white); border: none; border-radius: 0;
             padding: 0.5rem 1.25rem; font-size: 0.8125rem; cursor: pointer; font-family: inherit; font-weight: 500;
         }
-        .filter-btn:hover { opacity: 0.9; }
+        .filter-btn:hover { opacity: 0.85; }
         .dl-btn {
-            background: none; border: 1px solid var(--border); border-radius: 4px;
+            background: none; border: 1px solid var(--border); border-radius: 0;
             padding: 0.4rem 1rem; font-size: 0.8125rem; cursor: pointer; color: var(--text-muted); font-family: inherit; text-decoration: none; display: inline-block;
         }
-        .dl-btn:hover { border-color: var(--blue); color: var(--blue); text-decoration: none; }
+        .dl-btn:hover { border-color: var(--black); color: var(--black); text-decoration: none; }
 
         /* PAGINATION */
         .pag { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--text-muted); margin: 0.75rem 0; }
-        .pag button { border: 1px solid var(--border); border-radius: 4px; padding: 3px 10px; background: var(--white); cursor: pointer; font-size: 0.75rem; color: var(--text); }
+        .pag button { border: 1px solid var(--border); border-radius: 0; padding: 3px 10px; background: var(--white); cursor: pointer; font-size: 0.75rem; color: var(--text); }
         .pag button:disabled { opacity: 0.4; cursor: default; }
-        .pag button:not(:disabled):hover { border-color: var(--blue); }
+        .pag button:not(:disabled):hover { background: var(--black); color: var(--white); }
 
         /* TABLE */
-        .table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; }
+        .table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 0; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-        th { text-align: left; padding: 0.75rem 1rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); background: #f8f8ff; cursor: pointer; user-select: none; white-space: nowrap; }
+        th { text-align: left; padding: 0.75rem 1rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); background: #f5f5f5; cursor: pointer; user-select: none; white-space: nowrap; }
         th:hover { color: var(--text); }
         th .sort-arrow { font-size: 0.5rem; margin-left: 3px; opacity: 0.4; }
-        th.sorted .sort-arrow { opacity: 1; color: var(--blue); }
-        td { padding: 0.6rem 1rem; border-bottom: 1px solid #ededf5; }
+        th.sorted .sort-arrow { opacity: 1; color: var(--black); }
+        td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--grey-light); }
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background: #f5f5ff; }
+        tr:hover td { background: #f5f5f5; }
 
         /* BADGES */
-        .badge { display: inline-block; font-size: 0.6875rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
-        .badge-pass { background: #e8f5ed; color: var(--green); }
-        .badge-fail { background: #fbe8e8; color: var(--red); }
-        .badge-uncertain { background: #f5f0e0; color: var(--yellow); }
+        .badge { display: inline-block; font-size: 0.6875rem; font-weight: 600; padding: 2px 8px; border-radius: 0; border: 1px solid var(--black); color: var(--black); background: var(--white); }
 
         /* MODAL */
         .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
         .modal-bg.show { display: flex; }
-        .modal { background: var(--white); border-radius: 10px; width: min(75vw, 900px); max-height: 80vh; display: flex; flex-direction: column; }
+        .modal { background: var(--white); border: 1px solid var(--border); border-radius: 2px; width: min(75vw, 900px); max-height: 80vh; display: flex; flex-direction: column; }
         .modal-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
         .modal-head h3 { font-size: 1rem; font-weight: 600; }
         .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); line-height: 1; }
         .modal-body { padding: 1.5rem; overflow: auto; flex: 1; font-size: 0.8125rem; white-space: pre-wrap; line-height: 1.6; }
-        .copy-btn { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 3px 10px; font-size: 0.6875rem; cursor: pointer; color: var(--text-muted); white-space: nowrap; }
-        .copy-btn:hover { border-color: var(--blue); color: var(--blue); }
+        .copy-btn { background: none; border: 1px solid var(--border); border-radius: 0; padding: 3px 10px; font-size: 0.6875rem; cursor: pointer; color: var(--text-muted); white-space: nowrap; }
+        .copy-btn:hover { border-color: var(--black); color: var(--black); }
 
         /* DISCLAIMER */
-        .disclaimer { background: #f8f5e8; border: 1px solid #e6d9a3; border-radius: 6px; padding: 1rem 1.25rem; font-size: 0.8125rem; color: var(--yellow); line-height: 1.5; margin-bottom: 2rem; }
+        .disclaimer { background: var(--white); border: 1px solid var(--border); border-radius: 0; padding: 1rem 1.25rem; font-size: 0.8125rem; color: var(--text); line-height: 1.5; margin-bottom: 2rem; }
 
         /* FOOTER */
         footer { background: var(--white); border-top: 1px solid var(--border); }
@@ -115,7 +107,7 @@
         .footer-col { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.8; }
         .footer-col strong { color: var(--text); font-weight: 600; }
         .footer-col a { color: var(--text-muted); }
-        .footer-col a:hover { color: var(--blue); }
+        .footer-col a:hover { color: var(--black); }
 
         /* CHECK ICONS */
         .qc-icon { display: inline-block; width: 14px; text-align: center; margin-right: 2px; cursor: help; font-size: 0.75rem; }
@@ -136,7 +128,7 @@
             <div class="nav-links">
                 <a href="/programmas" data-t="programmas">Programma's</a>
                 <a href="/partijen" data-t="partijen">Partijen</a>
-                <a href="/kaart">Kaart</a>
+                <a href="/data">Data</a>
                 <a href="/api/docs">API</a>
                 <a href="https://github.com/vanderburgt/polok" target="_blank" rel="noopener noreferrer" class="gh-link" title="GitHub">
                     <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -237,7 +229,7 @@
         document.querySelectorAll('[data-t-placeholder]').forEach(function(el) { el.placeholder = t(el.dataset.tPlaceholder); });
         var path = location.pathname;
         document.querySelectorAll('.nav-links a[data-t]').forEach(function(a) { a.classList.toggle('active', a.getAttribute('href') === path); });
-        document.querySelectorAll('.nav-links a[href="/kaart"]').forEach(function(a) { a.classList.toggle('active', path === '/kaart'); });
+        document.querySelectorAll('.nav-links a[href="/data"]').forEach(function(a) { a.classList.toggle('active', path === '/data'); });
     }
 
     /* Modal: close on ESC or click outside */

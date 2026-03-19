@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% block title %}Data - Polok{% endblock %}
+{% block content %}
+<style>
+    .data-section { margin-bottom: 2.5rem; }
+    .data-section h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .bar-chart-wrap { border: 1px solid #000; background: #fff; padding: 1.25rem; margin-bottom: 1rem; }
+    .bar-chart-label { font-size: 0.8125rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .bar-chart-sublabel { font-size: 0.75rem; color: #666; margin-bottom: 0.25rem; }
+    .map-container { background: #fff; border: 1px solid #000; overflow: hidden; position: relative; }
+    .map-svg { width: 100%; height: auto; display: block; }
+    .map-svg path { stroke: #fff; stroke-width: 0.3; transition: opacity 0.15s; }
+    .map-svg path:hover { opacity: 0.85; stroke: #000; stroke-width: 0.8; }
+    .map-tooltip {
+        position: absolute; pointer-events: none; background: #fff; border: 1px solid #000;
+        padding: 0.5rem 0.75rem; font-size: 0.8125rem;
+        display: none; z-index: 10; white-space: nowrap;
+    }
+    .map-tooltip strong { font-weight: 600; }
+    .map-legend { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; font-size: 0.8125rem; color: #666; flex-wrap: wrap; }
+    .map-legend-item { display: flex; align-items: center; gap: 0.4rem; }
+    .map-legend-swatch { width: 24px; height: 14px; border: 1px solid #000; }
+</style>
+
+<h1>Data</h1>
+<p class="subtitle">Overzicht van de dataset: 2.901 partijen uit 342 gemeenten, waarvan 2.266 met een gevonden verkiezingsprogramma.</p>
+
+<div class="data-section">
+    <h2>Verkiezingsprogramma's</h2>
+    <div class="bar-chart-wrap">
+        <div class="bar-chart-label">Partijen: 2.901 totaal</div>
+        <div id="stats-bar-chart"></div>
+        <div id="stats-bar-legend" style="display:flex;gap:1.5rem;margin-top:0.75rem;font-size:0.75rem;color:#666"></div>
+    </div>
+</div>
+
+<div class="data-section">
+    <h2>Dekking per gemeente</h2>
+    <div class="map-container" id="map-container">
+        <div class="map-tooltip" id="map-tooltip">
+            <strong id="tt-name"></strong><br>
+            <span id="tt-status"></span>
+        </div>
+        <div id="map-loading" style="padding:3rem;text-align:center;color:#666">Kaart laden...</div>
+    </div>
+
+    <div class="map-legend" id="map-legend"></div>
+</div>
+
+<script>
+var NS = 'http://www.w3.org/2000/svg';
+
+/* ── SVG Pattern definitions (reusable) ── */
+function createPatternDefs() {
+    var defs = document.createElementNS(NS, 'defs');
+
+    /* Dense diamond / crosshatch pattern */
+    var pDense = document.createElementNS(NS, 'pattern');
+    pDense.setAttribute('id', 'pattern-dense');
+    pDense.setAttribute('patternUnits', 'userSpaceOnUse');
+    pDense.setAttribute('width', '4');
+    pDense.setAttribute('height', '4');
+    var bg1 = document.createElementNS(NS, 'rect');
+    bg1.setAttribute('width', '4'); bg1.setAttribute('height', '4'); bg1.setAttribute('fill', '#fff');
+    pDense.appendChild(bg1);
+    /* Two diagonal lines forming crosshatch */
+    var line1 = document.createElementNS(NS, 'path');
+    line1.setAttribute('d', 'M0 0L4 4M4 0L0 4');
+    line1.setAttribute('stroke', '#000'); line1.setAttribute('stroke-width', '1');
+    pDense.appendChild(line1);
+    defs.appendChild(pDense);
+
+    /* Medium density diagonal lines */
+    var pMedium = document.createElementNS(NS, 'pattern');
+    pMedium.setAttribute('id', 'pattern-medium');
+    pMedium.setAttribute('patternUnits', 'userSpaceOnUse');
+    pMedium.setAttribute('width', '6');
+    pMedium.setAttribute('height', '6');
+    var bg2 = document.createElementNS(NS, 'rect');
+    bg2.setAttribute('width', '6'); bg2.setAttribute('height', '6'); bg2.setAttribute('fill', '#fff');
+    pMedium.appendChild(bg2);
+    var line2 = document.createElementNS(NS, 'path');
+    line2.setAttribute('d', 'M0 6L6 0M-1 1L1 -1M5 7L7 5');
+    line2.setAttribute('stroke', '#000'); line2.setAttribute('stroke-width', '0.8');
+    pMedium.appendChild(line2);
+    defs.appendChild(pMedium);
+
+    /* Sparse diagonal lines */
+    var pSparse = document.createElementNS(NS, 'pattern');
+    pSparse.setAttribute('id', 'pattern-sparse');
+    pSparse.setAttribute('patternUnits', 'userSpaceOnUse');
+    pSparse.setAttribute('width', '10');
+    pSparse.setAttribute('height', '10');
+    var bg3 = document.createElementNS(NS, 'rect');
+    bg3.setAttribute('width', '10'); bg3.setAttribute('height', '10'); bg3.setAttribute('fill', '#fff');
+    pSparse.appendChild(bg3);
+    var line3 = document.createElementNS(NS, 'path');
+    line3.setAttribute('d', 'M0 10L10 0M-2 2L2 -2M8 12L12 8');
+    line3.setAttribute('stroke', '#000'); line3.setAttribute('stroke-width', '0.6');
+    pSparse.appendChild(line3);
+    defs.appendChild(pSparse);
+
+    return defs;
+}
+
+/* ── Stats bar chart ── */
+(function() {
+    var container = document.getElementById('stats-bar-chart');
+    var totalParties = 2901;
+    var withProgram = 2266;
+    var withoutProgram = totalParties - withProgram;
+    var barW = 700;
+    var barH = 40;
+    var wWith = (withProgram / totalParties) * barW;
+    var wWithout = barW - wWith;
+
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + barW + ' ' + (barH + 20));
+    svg.setAttribute('width', '100%');
+    svg.style.display = 'block';
+    svg.style.maxWidth = barW + 'px';
+
+    var defs = createPatternDefs();
+    svg.appendChild(defs);
+
+    /* "With program" segment - dense crosshatch */
+    var r1 = document.createElementNS(NS, 'rect');
+    r1.setAttribute('x', '0'); r1.setAttribute('y', '0');
+    r1.setAttribute('width', String(wWith)); r1.setAttribute('height', String(barH));
+    r1.setAttribute('fill', 'url(#pattern-dense)');
+    r1.setAttribute('stroke', '#000'); r1.setAttribute('stroke-width', '1');
+    svg.appendChild(r1);
+
+    /* "Without program" segment - sparse diagonal */
+    var r2 = document.createElementNS(NS, 'rect');
+    r2.setAttribute('x', String(wWith)); r2.setAttribute('y', '0');
+    r2.setAttribute('width', String(wWithout)); r2.setAttribute('height', String(barH));
+    r2.setAttribute('fill', 'url(#pattern-sparse)');
+    r2.setAttribute('stroke', '#000'); r2.setAttribute('stroke-width', '1');
+    svg.appendChild(r2);
+
+    /* Number labels on the bars */
+    if (wWith > 50) {
+        var t1 = document.createElementNS(NS, 'text');
+        t1.setAttribute('x', String(wWith / 2)); t1.setAttribute('y', String(barH / 2 + 5));
+        t1.setAttribute('text-anchor', 'middle');
+        t1.setAttribute('font-size', '13'); t1.setAttribute('font-weight', '700'); t1.setAttribute('fill', '#000');
+        t1.setAttribute('font-family', '-apple-system, BlinkMacSystemFont, sans-serif');
+        t1.textContent = String(withProgram);
+        svg.appendChild(t1);
+    }
+    if (wWithout > 50) {
+        var t2 = document.createElementNS(NS, 'text');
+        t2.setAttribute('x', String(wWith + wWithout / 2)); t2.setAttribute('y', String(barH / 2 + 5));
+        t2.setAttribute('text-anchor', 'middle');
+        t2.setAttribute('font-size', '13'); t2.setAttribute('font-weight', '700'); t2.setAttribute('fill', '#000');
+        t2.setAttribute('font-family', '-apple-system, BlinkMacSystemFont, sans-serif');
+        t2.textContent = String(withoutProgram);
+        svg.appendChild(t2);
+    }
+
+    container.appendChild(svg);
+
+    /* Legend */
+    var legend = document.getElementById('stats-bar-legend');
+
+    var leg1 = document.createElement('span');
+    leg1.style.display = 'inline-flex';
+    leg1.style.alignItems = 'center';
+    leg1.style.gap = '0.35rem';
+
+    var sw1svg = document.createElementNS(NS, 'svg');
+    sw1svg.setAttribute('width', '18'); sw1svg.setAttribute('height', '12');
+    sw1svg.setAttribute('viewBox', '0 0 18 12');
+    var sw1defs = createPatternDefs();
+    sw1svg.appendChild(sw1defs);
+    var sw1r = document.createElementNS(NS, 'rect');
+    sw1r.setAttribute('width', '18'); sw1r.setAttribute('height', '12');
+    sw1r.setAttribute('fill', 'url(#pattern-dense)');
+    sw1r.setAttribute('stroke', '#000'); sw1r.setAttribute('stroke-width', '1');
+    sw1svg.appendChild(sw1r);
+    leg1.appendChild(sw1svg);
+    var lt1 = document.createElement('span');
+    lt1.textContent = 'Met programma (' + withProgram + ')';
+    leg1.appendChild(lt1);
+    legend.appendChild(leg1);
+
+    var leg2 = document.createElement('span');
+    leg2.style.display = 'inline-flex';
+    leg2.style.alignItems = 'center';
+    leg2.style.gap = '0.35rem';
+
+    var sw2svg = document.createElementNS(NS, 'svg');
+    sw2svg.setAttribute('width', '18'); sw2svg.setAttribute('height', '12');
+    sw2svg.setAttribute('viewBox', '0 0 18 12');
+    var sw2defs = createPatternDefs();
+    sw2svg.appendChild(sw2defs);
+    var sw2r = document.createElementNS(NS, 'rect');
+    sw2r.setAttribute('width', '18'); sw2r.setAttribute('height', '12');
+    sw2r.setAttribute('fill', 'url(#pattern-sparse)');
+    sw2r.setAttribute('stroke', '#000'); sw2r.setAttribute('stroke-width', '1');
+    sw2svg.appendChild(sw2r);
+    leg2.appendChild(sw2svg);
+    var lt2 = document.createElement('span');
+    lt2.textContent = 'Zonder programma (' + withoutProgram + ')';
+    leg2.appendChild(lt2);
+    legend.appendChild(leg2);
+})();
+
+/* ── Map with SVG fill patterns ── */
+function coveragePatternId(ratio) {
+    if (ratio <= 0) return null;          /* white / no fill */
+    if (ratio < 0.4) return 'pattern-sparse';
+    if (ratio < 0.7) return 'pattern-medium';
+    return 'pattern-dense';
+}
+
+async function loadMap() {
+    var geoRes = fetch('/static/gemeenten.json');
+    var statusRes = fetch('/_data/gemeenten/status');
+    var geo = await (await geoRes).json();
+    var statusList = await (await statusRes).json();
+
+    var statusMap = {};
+    statusList.forEach(function(s) { statusMap[s.code] = s; });
+
+    /* Bounding box */
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    geo.features.forEach(function(f) {
+        var coords = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+        coords.forEach(function(poly) { poly.forEach(function(ring) {
+            ring.forEach(function(p) {
+                if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+                if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+            });
+        }); });
+    });
+
+    /* Correct aspect ratio at ~52N */
+    var latCorrection = Math.cos((minY + maxY) / 2 * Math.PI / 180);
+    var geoW = (maxX - minX) * latCorrection;
+    var geoH = maxY - minY;
+
+    var svgW = 600, pad = 10;
+    var scale = (svgW - 2 * pad) / geoW;
+    var svgH = geoH * scale + 2 * pad;
+
+    function project(lon, lat) {
+        return [(lon - minX) * latCorrection * scale + pad, (maxY - lat) * scale + pad];
+    }
+    function ringToPath(ring) {
+        return ring.map(function(p, i) {
+            var pt = project(p[0], p[1]);
+            return (i === 0 ? 'M' : 'L') + pt[0].toFixed(1) + ',' + pt[1].toFixed(1);
+        }).join('') + 'Z';
+    }
+
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + svgW + ' ' + svgH);
+    svg.setAttribute('class', 'map-svg');
+
+    /* Add pattern defs to the map SVG */
+    var defs = createPatternDefs();
+    svg.appendChild(defs);
+
+    geo.features.forEach(function(f) {
+        var code = f.properties.c;
+        var name = f.properties.n;
+        var status = statusMap[code];
+        var dekking = status ? status.dekking : 0;
+        var totaal = status ? status.totaal_partijen : 0;
+        var met = status ? status.met_programma : 0;
+
+        var d = '';
+        var coords = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+        coords.forEach(function(poly) { poly.forEach(function(ring) { d += ringToPath(ring); }); });
+
+        var path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', d);
+
+        var patId = coveragePatternId(dekking);
+        if (patId) {
+            path.style.fill = 'url(#' + patId + ')';
+        } else {
+            path.style.fill = '#fff';
+        }
+
+        path.setAttribute('data-name', name);
+        path.setAttribute('data-dekking', dekking);
+        path.setAttribute('data-met', met);
+        path.setAttribute('data-totaal', totaal);
+        svg.appendChild(path);
+    });
+
+    var container = document.getElementById('map-container');
+    document.getElementById('map-loading').style.display = 'none';
+    container.appendChild(svg);
+
+    /* Tooltip */
+    var tooltip = document.getElementById('map-tooltip');
+    var ttName = document.getElementById('tt-name');
+    var ttStatus = document.getElementById('tt-status');
+
+    svg.addEventListener('mousemove', function(e) {
+        var target = e.target;
+        if (target.tagName !== 'path') { tooltip.style.display = 'none'; return; }
+        ttName.textContent = target.getAttribute('data-name');
+        var met = target.getAttribute('data-met');
+        var totaal = target.getAttribute('data-totaal');
+        var dekking = Math.round(parseFloat(target.getAttribute('data-dekking')) * 100);
+        ttStatus.textContent = met + ' / ' + totaal + ' partijen (' + dekking + '%)';
+        var rect = container.getBoundingClientRect();
+        var x = e.clientX - rect.left + 12;
+        var y = e.clientY - rect.top - 10;
+        if (x + 200 > rect.width) x = e.clientX - rect.left - 200;
+        tooltip.style.left = x + 'px';
+        tooltip.style.top = y + 'px';
+        tooltip.style.display = 'block';
+    });
+    svg.addEventListener('mouseleave', function() { tooltip.style.display = 'none'; });
+
+    /* Build legend */
+    var legendContainer = document.getElementById('map-legend');
+    var legendItems = [
+        { pattern: null, label: 'Geen dekking (0%)' },
+        { pattern: 'pattern-sparse', label: 'Lage dekking (<40%)' },
+        { pattern: 'pattern-medium', label: 'Gemiddelde dekking (40-70%)' },
+        { pattern: 'pattern-dense', label: 'Hoge dekking (>70%)' }
+    ];
+    legendItems.forEach(function(item) {
+        var wrap = document.createElement('span');
+        wrap.className = 'map-legend-item';
+
+        var swSvg = document.createElementNS(NS, 'svg');
+        swSvg.setAttribute('width', '24'); swSvg.setAttribute('height', '14');
+        swSvg.setAttribute('viewBox', '0 0 24 14');
+        var swDefs = createPatternDefs();
+        swSvg.appendChild(swDefs);
+        var swRect = document.createElementNS(NS, 'rect');
+        swRect.setAttribute('width', '24'); swRect.setAttribute('height', '14');
+        if (item.pattern) {
+            swRect.setAttribute('fill', 'url(#' + item.pattern + ')');
+        } else {
+            swRect.setAttribute('fill', '#fff');
+        }
+        swRect.setAttribute('stroke', '#000'); swRect.setAttribute('stroke-width', '1');
+        swSvg.appendChild(swRect);
+        wrap.appendChild(swSvg);
+
+        var lbl = document.createElement('span');
+        lbl.textContent = item.label;
+        wrap.appendChild(lbl);
+
+        legendContainer.appendChild(wrap);
+    });
+}
+
+loadMap();
+</script>
+{% endblock %}
