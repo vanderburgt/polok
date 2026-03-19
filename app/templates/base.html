@@ -4,23 +4,158 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Polok{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --blue: #3737fa;
+            --bg: #eef0ff;
+            --text: #1a1a3e;
+            --text-muted: #6b6b8d;
+            --border: #c8c8e6;
+            --white: #fff;
+            --green: #1a8a4a;
+            --red: #c43333;
+            --yellow: #9a7a1a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh; display: flex; flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { color: var(--blue); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* NAV */
+        nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 2rem; }
+        .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 3.5rem; }
+        .nav-brand { font-weight: 700; font-size: 1.25rem; color: var(--text); letter-spacing: -0.02em; }
+        .nav-brand:hover { text-decoration: none; }
+        .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+        .nav-links a { color: var(--text-muted); font-size: 0.875rem; }
+        .nav-links a:hover, .nav-links a.active { color: var(--text); text-decoration: none; }
+        .lang-btn { font-size: 0.75rem; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; background: none; color: var(--text-muted); cursor: pointer; }
+        .lang-btn:hover { color: var(--text); border-color: var(--text-muted); }
+        .gh-link { display: flex; align-items: center; }
+        .gh-link svg { width: 20px; height: 20px; fill: var(--text-muted); transition: fill 0.15s; }
+        .gh-link:hover svg { fill: var(--text); }
+
+        /* MAIN */
+        main { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem; width: 100%; flex: 1; }
+        h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+        .subtitle { color: var(--text-muted); font-size: 0.9375rem; margin-bottom: 2rem; line-height: 1.5; }
+
+        /* STATS */
+        .stats { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+        .stat { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 500; }
+        .stat-pass { border-color: #a3d9b1; color: var(--green); }
+        .stat-fail { border-color: #e6a3a3; color: var(--red); }
+        .stat-uncertain { border-color: #e6d9a3; color: var(--yellow); }
+
+        /* FILTERS */
+        .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1.5rem; }
+        .filter-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .filter-group input, .filter-group select {
+            border: 1px solid var(--border); border-radius: 4px; padding: 0.45rem 0.6rem;
+            font-size: 0.8125rem; background: var(--white); color: var(--text); font-family: inherit;
+        }
+        .filter-group input:focus, .filter-group select:focus { outline: none; border-color: var(--blue); }
+        .filter-btn {
+            background: var(--blue); color: var(--white); border: none; border-radius: 4px;
+            padding: 0.5rem 1.25rem; font-size: 0.8125rem; cursor: pointer; font-family: inherit; font-weight: 500;
+        }
+        .filter-btn:hover { opacity: 0.9; }
+
+        /* PAGINATION */
+        .pag { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--text-muted); margin: 0.75rem 0; }
+        .pag button { border: 1px solid var(--border); border-radius: 4px; padding: 3px 10px; background: var(--white); cursor: pointer; font-size: 0.75rem; color: var(--text); }
+        .pag button:disabled { opacity: 0.4; cursor: default; }
+        .pag button:not(:disabled):hover { border-color: var(--blue); }
+
+        /* TABLE */
+        .table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+        th { text-align: left; padding: 0.75rem 1rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); background: #f8f8ff; }
+        td { padding: 0.6rem 1rem; border-bottom: 1px solid #ededf5; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f5f5ff; }
+
+        /* BADGES */
+        .badge { display: inline-block; font-size: 0.6875rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+        .badge-pass { background: #e8f5ed; color: var(--green); }
+        .badge-fail { background: #fbe8e8; color: var(--red); }
+        .badge-uncertain { background: #f5f0e0; color: var(--yellow); }
+
+        /* MODAL */
+        .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+        .modal-bg.show { display: flex; }
+        .modal { background: var(--white); border-radius: 10px; width: min(75vw, 900px); max-height: 80vh; display: flex; flex-direction: column; }
+        .modal-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-head h3 { font-size: 1rem; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); line-height: 1; }
+        .modal-body { padding: 1.5rem; overflow: auto; flex: 1; font-size: 0.8125rem; white-space: pre-wrap; line-height: 1.6; }
+
+        /* FOOTER */
+        footer { background: var(--white); border-top: 1px solid var(--border); padding: 2.5rem 2rem; margin-top: auto; }
+        .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+        .footer-col { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.8; }
+        .footer-col strong { color: var(--text); font-weight: 600; }
+        .footer-col a { color: var(--text-muted); }
+        .footer-col a:hover { color: var(--blue); }
+
+        /* CHECK ICONS */
+        .qc-icon { display: inline-block; width: 14px; text-align: center; margin-right: 2px; cursor: help; font-size: 0.75rem; }
+
+        @media (max-width: 768px) {
+            main { padding: 1.5rem 1rem; }
+            .filters { gap: 0.5rem; }
+            .footer-inner { flex-direction: column; }
+            h1 { font-size: 1.5rem; }
+        }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <nav class="bg-white border-b border-gray-200 px-6 py-3">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <a href="/" class="text-xl font-bold text-gray-900">Polok</a>
-            <div class="flex items-center gap-6">
-                <a href="/programmas" class="text-gray-600 hover:text-gray-900">Programma's</a>
-                <a href="/partijen" class="text-gray-600 hover:text-gray-900">Partijen</a>
-                <a href="/api/docs" class="text-gray-600 hover:text-gray-900">API</a>
-                <button onclick="toggleLang()" id="lang-toggle" class="text-xs border rounded px-2 py-1 text-gray-500 hover:text-gray-700">EN</button>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-brand">Polok</a>
+            <div class="nav-links">
+                <a href="/programmas" data-t="programmas">Programma's</a>
+                <a href="/partijen" data-t="partijen">Partijen</a>
+                <a href="/api/docs">API</a>
+                <a href="https://github.com/vanderburgt/polok" target="_blank" rel="noopener noreferrer" class="gh-link" title="GitHub">
+                    <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                </a>
+                <button onclick="toggleLang()" id="lang-toggle" class="lang-btn">EN</button>
             </div>
         </div>
     </nav>
-    <main class="max-w-7xl mx-auto px-6 py-8">
+
+    <main>
         {% block content %}{% endblock %}
     </main>
+
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-col">
+                <strong>Polok</strong><br>
+                Verkiezingsprogramma's van Nederlandse<br>
+                gemeenteraadsverkiezingen 2026
+            </div>
+            <div class="footer-col">
+                <strong>Colofon</strong><br>
+                Een project van <a href="https://openstate.eu" target="_blank">Open State Foundation</a><br>
+                In samenwerking met <a href="https://nos.nl" target="_blank">NOS Bureau Regio</a><br>
+                <a href="https://github.com/vanderburgt/polok" target="_blank">Broncode op GitHub</a>
+            </div>
+            <div class="footer-col">
+                <strong>Data</strong><br>
+                2.901 partijen &middot; 342 gemeenten<br>
+                2.266 goedgekeurde programma's<br>
+                <a href="/api/docs">REST API documentatie</a>
+            </div>
+        </div>
+    </footer>
+
     <script>
     var LANG = localStorage.getItem('polok_lang') || 'nl';
     var T = {
@@ -30,8 +165,8 @@
             goedgekeurd: 'Goedgekeurd', afgekeurd: 'Afgekeurd', onzeker: 'Onzeker',
             per_pagina: 'Per pagina', filter: 'Filteren',
             partij: 'Partij', gemeente: 'Gemeente', type: 'Type', woorden: 'Woorden',
-            kwaliteit_col: 'Kwaliteit', qc_checks: 'QC Checks', methode: 'Methode', acties: 'Acties',
-            bron: 'Bron', tekst: 'Tekst', notities: 'Notities',
+            kwaliteit_col: 'Kwaliteit', qc_checks: 'QC', methode: 'Methode', acties: 'Acties',
+            bron: 'Bron', tekst: 'Tekst', notities: 'notities',
             vorige: 'Vorige', volgende: 'Volgende', pagina: 'Pagina',
             van: 'van', tonen: 'Tonen',
             totaal_programmas: 'Totaal', niet_gevonden: 'Niet gevonden',
@@ -42,10 +177,8 @@
             min_woorden: 'Min. woorden', max_woorden: 'Max. woorden',
             bestandstype: 'Bestandstype', coalitie: 'coalitie',
             programma_tekst: 'Programmatekst', qc_notities: 'QC Notities',
-            geen_tekst: 'Geen tekst beschikbaar',
             juiste_termijn: 'Juiste verkiezingstermijn (2026-2030)',
-            juiste_gemeente: 'Juiste gemeente',
-            juiste_partij: 'Juiste partij',
+            juiste_gemeente: 'Juiste gemeente', juiste_partij: 'Juiste partij',
             is_programma: 'Is een verkiezingsprogramma',
             geslaagd: 'Geslaagd', gefaald: 'Gefaald', niet_gecontroleerd: 'Niet gecontroleerd',
         },
@@ -55,8 +188,8 @@
             goedgekeurd: 'Pass', afgekeurd: 'Fail', onzeker: 'Uncertain',
             per_pagina: 'Per page', filter: 'Filter',
             partij: 'Party', gemeente: 'Municipality', type: 'Type', woorden: 'Words',
-            kwaliteit_col: 'Quality', qc_checks: 'QC Checks', methode: 'Method', acties: 'Actions',
-            bron: 'Source', tekst: 'Text', notities: 'Notes',
+            kwaliteit_col: 'Quality', qc_checks: 'QC', methode: 'Method', acties: 'Actions',
+            bron: 'Source', tekst: 'Text', notities: 'notes',
             vorige: 'Prev', volgende: 'Next', pagina: 'Page',
             van: 'of', tonen: 'Showing',
             totaal_programmas: 'Total', niet_gevonden: 'Not found',
@@ -67,34 +200,26 @@
             min_woorden: 'Min. words', max_woorden: 'Max. words',
             bestandstype: 'File type', coalitie: 'coalition',
             programma_tekst: 'Program text', qc_notities: 'QC Notes',
-            geen_tekst: 'No text available',
             juiste_termijn: 'Correct election term (2026-2030)',
-            juiste_gemeente: 'Correct municipality',
-            juiste_partij: 'Correct party',
+            juiste_gemeente: 'Correct municipality', juiste_partij: 'Correct party',
             is_programma: 'Is an election program',
             geslaagd: 'Pass', gefaald: 'Fail', niet_gecontroleerd: 'Not checked',
         }
     };
-
     function t(key) { return T[LANG][key] || key; }
-
     function toggleLang() {
         LANG = LANG === 'nl' ? 'en' : 'nl';
         localStorage.setItem('polok_lang', LANG);
         updateLangUI();
         if (typeof onLangChange === 'function') onLangChange();
     }
-
     function updateLangUI() {
         document.getElementById('lang-toggle').textContent = LANG === 'nl' ? 'EN' : 'NL';
-        document.querySelectorAll('[data-t]').forEach(function(el) {
-            el.textContent = t(el.dataset.t);
-        });
-        document.querySelectorAll('[data-t-placeholder]').forEach(function(el) {
-            el.placeholder = t(el.dataset.tPlaceholder);
-        });
+        document.querySelectorAll('[data-t]').forEach(function(el) { el.textContent = t(el.dataset.t); });
+        document.querySelectorAll('[data-t-placeholder]').forEach(function(el) { el.placeholder = t(el.dataset.tPlaceholder); });
+        document.querySelectorAll('.nav-links a[href="/programmas"]').forEach(function(a) { a.classList.toggle('active', location.pathname === '/programmas'); });
+        document.querySelectorAll('.nav-links a[href="/partijen"]').forEach(function(a) { a.classList.toggle('active', location.pathname === '/partijen'); });
     }
-
     document.addEventListener('DOMContentLoaded', updateLangUI);
     </script>
     {% block scripts %}{% endblock %}

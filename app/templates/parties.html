@@ -1,20 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Partijen - Polok{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold text-gray-900 mb-4" data-t="partijen">Partijen</h1>
+<h1 data-t="partijen">Partijen</h1>
+<p class="subtitle">Alle partijen die deelnemen aan de gemeenteraadsverkiezingen 2026.</p>
 
-<div class="mb-6 flex gap-4 items-end flex-wrap">
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="naam">Naam</label>
-        <input type="text" id="filter-name" data-t-placeholder="zoeken" placeholder="Zoeken" class="border rounded px-3 py-2 text-sm w-48">
+<div class="filters">
+    <div class="filter-group">
+        <label data-t="naam">Naam</label>
+        <input type="text" id="filter-name" data-t-placeholder="zoeken" placeholder="Zoeken" style="width:12rem">
     </div>
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="gemeente">Gemeente</label>
-        <input type="text" id="filter-municipality" placeholder="Gemeente" class="border rounded px-3 py-2 text-sm w-48">
+    <div class="filter-group">
+        <label data-t="gemeente">Gemeente</label>
+        <input type="text" id="filter-municipality" placeholder="Gemeente" style="width:12rem">
     </div>
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="landelijke_partij">Landelijke partij</label>
-        <select id="filter-national" class="border rounded px-3 py-2 text-sm">
+    <div class="filter-group">
+        <label data-t="landelijke_partij">Landelijke partij</label>
+        <select id="filter-national">
             <option value="" data-t="alle">Alle</option>
             <option value="lokaal" data-t="lokale_partij">Lokale partij</option>
             {% for np in national_parties %}
@@ -22,169 +23,105 @@
             {% endfor %}
         </select>
     </div>
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="heeft_programma">Heeft programma</label>
-        <select id="filter-has-program" class="border rounded px-3 py-2 text-sm">
+    <div class="filter-group">
+        <label data-t="heeft_programma">Heeft programma</label>
+        <select id="filter-has-program">
             <option value="" data-t="alle">Alle</option>
             <option value="true" data-t="ja">Ja</option>
             <option value="false">Nee</option>
         </select>
     </div>
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="per_pagina">Per pagina</label>
-        <select id="filter-perpage" class="border rounded px-3 py-2 text-sm">
+    <div class="filter-group">
+        <label data-t="per_pagina">Per pagina</label>
+        <select id="filter-perpage">
             <option value="50">50</option>
             <option value="100">100</option>
             <option value="250">250</option>
         </select>
     </div>
-    <button onclick="currentPage=1;loadParties()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700" data-t="filter">Filteren</button>
+    <button onclick="currentPage=1;loadParties()" class="filter-btn" data-t="filter">Filteren</button>
 </div>
 
-<div id="pagination-top" class="mb-2 flex items-center gap-2 text-sm text-gray-600"></div>
+<div id="pagination-top" class="pag"></div>
 
-<div class="bg-white rounded-lg shadow overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="partij">Partij</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="gemeente">Gemeente</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="landelijke_partij">Landelijke partij</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="website">Website</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="programma">Programma</th>
-            </tr>
-        </thead>
-        <tbody id="parties-body" class="divide-y divide-gray-200"></tbody>
+<div class="table-wrap">
+    <table>
+        <thead><tr>
+            <th data-t="partij">Partij</th>
+            <th data-t="gemeente">Gemeente</th>
+            <th data-t="landelijke_partij">Landelijke partij</th>
+            <th data-t="website">Website</th>
+            <th data-t="programma">Programma</th>
+        </tr></thead>
+        <tbody id="parties-body"></tbody>
     </table>
 </div>
 
-<div id="pagination-bottom" class="mt-2 flex items-center gap-2 text-sm text-gray-600"></div>
+<div id="pagination-bottom" class="pag"></div>
 
 <script>
 var currentPage = 1;
-
 function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
-
-function cel(text) {
-    var td = document.createElement('td');
-    td.className = 'px-4 py-3 text-sm';
-    td.textContent = text;
-    return td;
-}
+function cel(text) { var td = document.createElement('td'); td.textContent = text; return td; }
 
 function renderPag(container, total, page, perPage, totalPages) {
     clearEl(container);
-    var start = (page-1)*perPage+1, end = Math.min(page*perPage, total);
-    var info = document.createElement('span');
-    info.textContent = t('tonen') + ' ' + start + '-' + end + ' ' + t('van') + ' ' + total;
-    container.appendChild(info);
+    if (total === 0) return;
+    var s = document.createElement('span');
+    s.textContent = t('tonen') + ' ' + ((page-1)*perPage+1) + '-' + Math.min(page*perPage, total) + ' ' + t('van') + ' ' + total;
+    container.appendChild(s);
     if (totalPages <= 1) return;
-
-    var prev = document.createElement('button');
-    prev.textContent = t('vorige');
-    prev.className = 'px-2 py-1 border rounded text-xs ' + (page<=1?'text-gray-400':'hover:bg-gray-100');
-    prev.disabled = page<=1;
-    prev.onclick = function(){currentPage=page-1;loadParties();};
-    container.appendChild(prev);
-
-    var pi = document.createElement('span');
-    pi.textContent = t('pagina') + ' ' + page + '/' + totalPages;
-    container.appendChild(pi);
-
-    var next = document.createElement('button');
-    next.textContent = t('volgende');
-    next.className = 'px-2 py-1 border rounded text-xs ' + (page>=totalPages?'text-gray-400':'hover:bg-gray-100');
-    next.disabled = page>=totalPages;
-    next.onclick = function(){currentPage=page+1;loadParties();};
-    container.appendChild(next);
+    var prev = document.createElement('button'); prev.textContent = t('vorige'); prev.disabled = page<=1;
+    prev.onclick = function(){currentPage=page-1;loadParties();}; container.appendChild(prev);
+    var pi = document.createElement('span'); pi.textContent = t('pagina')+' '+page+'/'+totalPages; container.appendChild(pi);
+    var next = document.createElement('button'); next.textContent = t('volgende'); next.disabled = page>=totalPages;
+    next.onclick = function(){currentPage=page+1;loadParties();}; container.appendChild(next);
 }
 
 function truncateUrl(url) {
-    try {
-        var u = new URL(url);
-        var display = u.hostname.replace(/^www\./, '');
-        if (u.pathname && u.pathname !== '/') display += u.pathname.replace(/\/$/, '');
-        if (display.length > 40) display = display.substring(0, 37) + '...';
-        return display;
-    } catch(e) { return url; }
+    try { var u=new URL(url); var d=u.hostname.replace(/^www\./,''); if(u.pathname&&u.pathname!=='/') d+=u.pathname.replace(/\/$/,''); return d.length>35?d.substring(0,32)+'...':d; } catch(e){return url;}
 }
 
 async function loadParties() {
-    var name = document.getElementById('filter-name').value.trim();
-    var muni = document.getElementById('filter-municipality').value.trim();
-    var nat = document.getElementById('filter-national').value;
-    var hasProg = document.getElementById('filter-has-program').value;
-    var perPage = document.getElementById('filter-perpage').value;
-    var params = new URLSearchParams({pagina: currentPage, per_pagina: perPage});
-    if (name) params.set('zoek', name);
-    if (muni) params.set('gemeente', muni);
-    if (nat) params.set('landelijke_partij', nat);
-    if (hasProg) params.set('heeft_programma', hasProg);
+    var params = new URLSearchParams({pagina:currentPage, per_pagina:document.getElementById('filter-perpage').value});
+    var n=document.getElementById('filter-name').value.trim(); if(n) params.set('zoek',n);
+    var m=document.getElementById('filter-municipality').value.trim(); if(m) params.set('gemeente',m);
+    var np=document.getElementById('filter-national').value; if(np) params.set('landelijke_partij',np);
+    var hp=document.getElementById('filter-has-program').value; if(hp) params.set('heeft_programma',hp);
 
-    var data = await (await fetch('/_data/partijen?' + params)).json();
+    var data = await (await fetch('/_data/partijen?'+params)).json();
+    var pp = parseInt(document.getElementById('filter-perpage').value);
+    renderPag(document.getElementById('pagination-top'), data.totaal, data.pagina, pp, data.totaal_paginas);
+    renderPag(document.getElementById('pagination-bottom'), data.totaal, data.pagina, pp, data.totaal_paginas);
 
-    renderPag(document.getElementById('pagination-top'), data.totaal, data.pagina, parseInt(perPage), data.totaal_paginas);
-    renderPag(document.getElementById('pagination-bottom'), data.totaal, data.pagina, parseInt(perPage), data.totaal_paginas);
-
-    var tbody = document.getElementById('parties-body');
-    clearEl(tbody);
-
-    data.partijen.forEach(function(p) {
+    var tbody = document.getElementById('parties-body'); clearEl(tbody);
+    data.partijen.forEach(function(p){
         var tr = document.createElement('tr');
-
-        var nameCell = cel(p.naam);
-        if (p.is_coalitie) {
-            var b = document.createElement('span');
-            b.className = 'text-xs text-purple-600 ml-1';
-            b.textContent = '(' + t('coalitie') + ')';
-            nameCell.appendChild(b);
-        }
-        tr.appendChild(nameCell);
-
+        var nc = cel(p.naam);
+        if(p.is_coalitie){ var b=document.createElement('span'); b.style.cssText='font-size:0.6875rem;color:var(--text-muted);margin-left:4px'; b.textContent='('+t('coalitie')+')'; nc.appendChild(b); }
+        tr.appendChild(nc);
         tr.appendChild(cel(p.gemeente));
-        tr.appendChild(cel(p.landelijke_partij || '-'));
+        tr.appendChild(cel(p.landelijke_partij||'-'));
 
-        var webCell = document.createElement('td');
-        webCell.className = 'px-4 py-3 text-sm';
-        if (p.website) {
-            var link = document.createElement('a');
-            link.href = p.website;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.className = 'text-blue-600 hover:underline';
-            link.textContent = truncateUrl(p.website);
-            link.title = p.website;
-            webCell.appendChild(link);
-        } else {
-            webCell.textContent = '-';
-        }
-        tr.appendChild(webCell);
+        var wc = document.createElement('td');
+        if(p.website){
+            var a=document.createElement('a'); a.href=p.website; a.target='_blank'; a.rel='noopener noreferrer';
+            a.textContent=truncateUrl(p.website); a.title=p.website; wc.appendChild(a);
+        } else { wc.textContent='-'; }
+        tr.appendChild(wc);
 
-        var progCell = document.createElement('td');
-        progCell.className = 'px-4 py-3 text-sm';
-        if (p.heeft_programma) {
-            var span = document.createElement('span');
-            span.className = 'text-green-600 font-medium';
-            span.textContent = t('ja');
-            progCell.appendChild(span);
-        } else {
-            progCell.textContent = '-';
-        }
-        tr.appendChild(progCell);
+        var pc = document.createElement('td');
+        if(p.heeft_programma){ var s=document.createElement('span'); s.style.color='var(--green)'; s.style.fontWeight='600'; s.textContent=t('ja'); pc.appendChild(s); }
+        else { pc.textContent='-'; }
+        tr.appendChild(pc);
 
         tbody.appendChild(tr);
     });
 }
 
-function onLangChange() { loadParties(); updateLangUI(); }
-
-document.getElementById('filter-name').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { currentPage = 1; loadParties(); }
-});
-document.getElementById('filter-municipality').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { currentPage = 1; loadParties(); }
-});
-
+function onLangChange(){ loadParties(); updateLangUI(); }
+document.getElementById('filter-name').addEventListener('keydown',function(e){ if(e.key==='Enter'){currentPage=1;loadParties();}});
+document.getElementById('filter-municipality').addEventListener('keydown',function(e){ if(e.key==='Enter'){currentPage=1;loadParties();}});
 loadParties();
 </script>
 {% endblock %}
