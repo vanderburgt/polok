@@ -49,11 +49,12 @@
         .stat { background: var(--white); border: 1px solid var(--border); border-radius: 0; padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 500; color: var(--text); }
 
         /* FILTERS */
-        .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1.5rem; }
-        .filter-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .filters { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1.5rem; }
+        .filter-group label { display: block; font-size: 0.6875rem; color: var(--text-muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
         .filter-group input, .filter-group select {
-            border: 1px solid var(--border); border-radius: 0; padding: 0.45rem 0.6rem;
+            border: 1px solid var(--border); border-radius: 0; padding: 0.5rem 0.6rem;
             font-size: 0.8125rem; background: var(--white); color: var(--text); font-family: inherit;
+            height: 2.25rem;
         }
         .filter-group input:focus, .filter-group select:focus { outline: none; border-color: var(--black); box-shadow: 0 0 0 1px var(--black); }
         .filter-btn {
@@ -76,10 +77,10 @@
         /* TABLE */
         .table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 0; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-        th { text-align: left; padding: 0.75rem 1rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); background: #f5f5f5; cursor: pointer; user-select: none; white-space: nowrap; }
-        th:hover { color: var(--text); }
-        th .sort-arrow { font-size: 0.5rem; margin-left: 3px; opacity: 0.4; }
-        th.sorted .sort-arrow { opacity: 1; color: var(--black); }
+        th { text-align: left; padding: 0.75rem 1rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text); font-weight: 600; border-bottom: 1px solid var(--border); background: #f5f5f5; cursor: pointer; user-select: none; white-space: nowrap; }
+        th:hover { background: #eee; }
+        th .sort-arrow { font-size: 0.5rem; margin-left: 3px; opacity: 0.3; }
+        th.sorted .sort-arrow { opacity: 1; }
         td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--grey-light); }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: #f5f5f5; }
@@ -170,7 +171,7 @@
         nl: {
             programmas: "Programma's", partijen: 'Partijen',
             zoeken: 'Zoeken', kwaliteit: 'Kwaliteit', alle: 'Alle',
-            goedgekeurd: 'Goedgekeurd', afgekeurd: 'Afgekeurd', onzeker: 'Onzeker',
+            goedgekeurd: 'Auto-verified', afgekeurd: 'Afgekeurd', onzeker: 'Onzeker',
             per_pagina: 'Per pagina', filter: 'Filteren',
             partij: 'Partij', gemeente: 'Gemeente', type: 'Type', woorden: 'Woorden',
             kwaliteit_col: 'Kwaliteit', qc_checks: 'QC', methode: 'Methode', acties: 'Acties',
@@ -189,12 +190,12 @@
             juiste_gemeente: 'Juiste gemeente', juiste_partij: 'Juiste partij',
             is_programma: 'Is een verkiezingsprogramma',
             geslaagd: 'Geslaagd', gefaald: 'Gefaald', niet_gecontroleerd: 'Niet gecontroleerd',
-            download_dump: 'Download database', kaart: 'Kaart',
+            download_dump: 'Download database', data: 'Data',
         },
         en: {
             programmas: 'Programs', partijen: 'Parties',
             zoeken: 'Search', kwaliteit: 'Quality', alle: 'All',
-            goedgekeurd: 'Pass', afgekeurd: 'Fail', onzeker: 'Uncertain',
+            goedgekeurd: 'Auto-verified', afgekeurd: 'Fail', onzeker: 'Uncertain',
             per_pagina: 'Per page', filter: 'Filter',
             partij: 'Party', gemeente: 'Municipality', type: 'Type', woorden: 'Words',
             kwaliteit_col: 'Quality', qc_checks: 'QC', methode: 'Method', acties: 'Actions',
@@ -213,7 +214,7 @@
             juiste_gemeente: 'Correct municipality', juiste_partij: 'Correct party',
             is_programma: 'Is an election program',
             geslaagd: 'Pass', gefaald: 'Fail', niet_gecontroleerd: 'Not checked',
-            download_dump: 'Download database', kaart: 'Map',
+            download_dump: 'Download database', data: 'Data',
         }
     };
     function t(key) { return T[LANG][key] || key; }
@@ -245,32 +246,40 @@
     });
 
     /* Table sorting */
+    var _sortState = {};
     function makeTableSortable(tableId, dataArray, renderFn) {
         var table = document.getElementById(tableId);
         if (!table) return;
         var headers = table.querySelectorAll('th');
-        var sortCol = -1, sortAsc = true;
-        headers.forEach(function(th, idx) {
-            var arrow = document.createElement('span');
-            arrow.className = 'sort-arrow';
-            arrow.textContent = '\u25B2';
-            th.appendChild(arrow);
-            th.addEventListener('click', function() {
-                headers.forEach(function(h) { h.classList.remove('sorted'); });
-                if (sortCol === idx) { sortAsc = !sortAsc; } else { sortCol = idx; sortAsc = true; }
-                th.classList.add('sorted');
-                arrow.textContent = sortAsc ? '\u25B2' : '\u25BC';
-                dataArray.sort(function(a, b) {
-                    var va = a[idx], vb = b[idx];
-                    if (va == null) va = '';
-                    if (vb == null) vb = '';
-                    if (typeof va === 'number' && typeof vb === 'number') return sortAsc ? va - vb : vb - va;
-                    va = String(va).toLowerCase(); vb = String(vb).toLowerCase();
-                    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        // Only add arrows and listeners once per table
+        if (!_sortState[tableId]) {
+            _sortState[tableId] = { col: -1, asc: true, arrows: [] };
+            headers.forEach(function(th, idx) {
+                var arrow = document.createElement('span');
+                arrow.className = 'sort-arrow';
+                arrow.textContent = '\u25B2';
+                th.appendChild(arrow);
+                _sortState[tableId].arrows.push(arrow);
+                th.addEventListener('click', function() {
+                    var st = _sortState[tableId];
+                    headers.forEach(function(h) { h.classList.remove('sorted'); });
+                    if (st.col === idx) { st.asc = !st.asc; } else { st.col = idx; st.asc = true; }
+                    th.classList.add('sorted');
+                    arrow.textContent = st.asc ? '\u25B2' : '\u25BC';
+                    st.data.sort(function(a, b) {
+                        var va = a[idx], vb = b[idx];
+                        if (va == null) va = '';
+                        if (vb == null) vb = '';
+                        if (typeof va === 'number' && typeof vb === 'number') return st.asc ? va - vb : vb - va;
+                        va = String(va).toLowerCase(); vb = String(vb).toLowerCase();
+                        return st.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+                    });
+                    st.render(st.data);
                 });
-                renderFn(dataArray);
             });
-        });
+        }
+        _sortState[tableId].data = dataArray;
+        _sortState[tableId].render = renderFn;
     }
 
     function closeModal(id) { document.getElementById(id).classList.remove('show'); }
