@@ -13,8 +13,12 @@ from app.models import Base
 config = context.config
 
 # Override sqlalchemy.url from environment if available
-db_url = os.environ.get("DATABASE_URL", "").replace("+asyncpg", "+psycopg")
+db_url = os.environ.get("DATABASE_URL", "")
 if db_url:
+    # Normalize to psycopg (v3) driver for sync migrations
+    db_url = db_url.replace("+asyncpg", "+psycopg")
+    if "postgresql://" in db_url and "+psycopg" not in db_url:
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
     config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.

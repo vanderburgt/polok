@@ -59,7 +59,33 @@ All `/api/` endpoints require an `X-API-Key` header. Set `API_KEYS` in your `.en
 
 ## Data
 
-The database contains election programs collected and quality-checked for the 2026 Dutch municipal elections. Programs were scraped from party websites, converted to text, and verified using automated quality checks.
+All data lives in the `data/` directory as CSV files (+ gzipped program texts). On first startup, the app automatically imports the data into the database. This means:
+
+1. **Update data** by modifying the CSV files and committing
+2. **Redeploy** and the app picks up the changes (use `--force` to reimport)
+
+To re-export after making database changes:
+
+```bash
+DATABASE_URL=postgresql://polok:polok@localhost:5432/polok python export_data.py
+```
+
+To force reimport from CSV:
+
+```bash
+DATABASE_URL=postgresql://polok:polok@localhost:5432/polok python import_data.py --force
+```
+
+### Data files
+
+| File | Contents | Size |
+|------|----------|------|
+| `municipalities.csv` | 340 Dutch municipalities | 18 KB |
+| `national_parties.csv` | 19 national parties | 1 KB |
+| `parties.csv` | 2,901 local party branches | 384 KB |
+| `party_websites.csv` | 3,033 party website URLs | 391 KB |
+| `programs_meta.csv` | 2,819 program metadata + QC results | 1.4 MB |
+| `programs_text.csv.gz` | 2,695 full program texts (gzipped) | ~47 MB |
 
 ## Development
 
