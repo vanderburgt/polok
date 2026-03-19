@@ -4,6 +4,10 @@
 <h1 data-t="programmas">Programma's</h1>
 <p class="subtitle">Verkiezingsprogramma's van de gemeenteraadsverkiezingen 2026, automatisch verzameld en gecontroleerd.</p>
 
+<div class="disclaimer">
+    <strong>Let op:</strong> Deze programma's zijn automatisch verzameld via webscraping en gecontroleerd met AI. Hoewel we ons best doen voor nauwkeurigheid, kunnen er fouten in de data zitten: verkeerde toewijzingen, ontbrekende programma's of foutieve kwaliteitsbeoordelingen. Controleer belangrijke gegevens altijd bij de bron.
+</div>
+
 <div id="stats-bar" class="stats"></div>
 
 <div class="filters">
@@ -45,12 +49,13 @@
         </select>
     </div>
     <button onclick="currentPage=1;loadPrograms()" class="filter-btn" data-t="filter">Filteren</button>
+    <a href="/_data/download/dump.sql" class="dl-btn" data-t="download_dump">Download database</a>
 </div>
 
 <div id="pagination-top" class="pag"></div>
 
 <div class="table-wrap">
-    <table>
+    <table id="prog-table">
         <thead><tr>
             <th data-t="partij">Partij</th>
             <th data-t="gemeente">Gemeente</th>
@@ -66,11 +71,15 @@
 
 <div id="pagination-bottom" class="pag"></div>
 
+<!-- Text modal with copy button -->
 <div id="text-modal" class="modal-bg">
     <div class="modal">
         <div class="modal-head">
             <h3 id="modal-title"></h3>
-            <button onclick="closeModal('text-modal')" class="modal-close">&times;</button>
+            <div style="display:flex;gap:0.5rem;align-items:center">
+                <button onclick="copyText()" class="copy-btn" id="copy-btn" data-t="kopieer">Kopieer tekst</button>
+                <button onclick="closeModal('text-modal')" class="modal-close">&times;</button>
+            </div>
         </div>
         <pre id="modal-text" class="modal-body"></pre>
     </div>
@@ -88,6 +97,7 @@
 
 <script>
 var currentPage = 1;
+var currentData = [];
 function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 function cel(text) { var td = document.createElement('td'); td.textContent = text; return td; }
 
@@ -117,6 +127,52 @@ async function loadStats() {
     } catch(e){}
 }
 
+function renderRows(rows) {
+    var tbody = document.getElementById('programs-body'); clearEl(tbody);
+    rows.forEach(function(r){
+        var tr = document.createElement('tr');
+        tr.appendChild(cel(r[0]||'-')); tr.appendChild(cel(r[1]||'-'));
+        tr.appendChild(cel(r[2]||'-')); tr.appendChild(cel(r[3]!=null?String(r[3]):'-'));
+
+        var qc = document.createElement('td');
+        if(r[4]){
+            var b=document.createElement('span');
+            b.className='badge badge-'+r[4];
+            b.textContent={pass:t('goedgekeurd'),fail:t('afgekeurd'),uncertain:t('onzeker')}[r[4]]||r[4];
+            qc.appendChild(b);
+        } else { qc.textContent='-'; }
+        tr.appendChild(qc);
+
+        var cc = document.createElement('td'); cc.style.whiteSpace='nowrap';
+        r[5].forEach(function(c){
+            var i=document.createElement('span'); i.className='qc-icon'; i.title=c.t;
+            i.textContent = c.v===true?'\u2713':c.v===false?'\u2717':'\u2014';
+            i.style.color = c.v===true?'var(--green)':c.v===false?'var(--red)':'var(--text-muted)';
+            cc.appendChild(i);
+        });
+        if(r[6]){
+            var nb=document.createElement('button'); nb.style.cssText='background:none;border:none;color:var(--blue);cursor:pointer;font-size:0.6875rem;margin-left:4px';
+            nb.textContent=t('notities'); nb.onclick=function(){
+                document.getElementById('qc-modal-title').textContent=r[0]+' - '+t('qc_notities');
+                document.getElementById('qc-modal-text').textContent=r[6];
+                document.getElementById('qc-modal').classList.add('show');
+            }; cc.appendChild(nb);
+        }
+        tr.appendChild(cc);
+
+        var ac = document.createElement('td'); ac.style.whiteSpace='nowrap';
+        if(r[7]){
+            var a=document.createElement('a'); a.href=r[7]; a.target='_blank'; a.rel='noopener noreferrer'; a.textContent=t('bron'); ac.appendChild(a);
+        }
+        if(r[8]){
+            var tb=document.createElement('button'); tb.style.cssText='background:none;border:none;color:var(--blue);cursor:pointer;font-size:0.8125rem;margin-left:8px';
+            tb.textContent=t('tekst'); tb.onclick=function(){viewText(r[8],r[0]||'');}; ac.appendChild(tb);
+        }
+        tr.appendChild(ac);
+        tbody.appendChild(tr);
+    });
+}
+
 async function loadPrograms() {
     var params = new URLSearchParams({pagina:currentPage, per_pagina:document.getElementById('filter-perpage').value});
     var q=document.getElementById('filter-quality').value; if(q) params.set('kwaliteit',q);
@@ -129,63 +185,37 @@ async function loadPrograms() {
     renderPag(document.getElementById('pagination-top'), data.totaal, data.pagina, data.per_pagina, data.totaal_paginas);
     renderPag(document.getElementById('pagination-bottom'), data.totaal, data.pagina, data.per_pagina, data.totaal_paginas);
 
-    var tbody = document.getElementById('programs-body'); clearEl(tbody);
-    data.programmas.forEach(function(p){
-        var tr = document.createElement('tr');
-        tr.appendChild(cel(p.partij||'-'));
-        tr.appendChild(cel(p.gemeente||'-'));
-        tr.appendChild(cel(p.bestandstype||(p.niet_gevonden?t('niet_gevonden'):'-')));
-        tr.appendChild(cel(p.woorden?String(p.woorden):'-'));
-
-        var qc = document.createElement('td');
-        if(p.kwaliteit){
-            var b=document.createElement('span');
-            b.className='badge badge-'+p.kwaliteit;
-            b.textContent={pass:t('goedgekeurd'),fail:t('afgekeurd'),uncertain:t('onzeker')}[p.kwaliteit]||p.kwaliteit;
-            qc.appendChild(b);
-        } else { qc.textContent='-'; }
-        tr.appendChild(qc);
-
-        var cc = document.createElement('td');
-        cc.style.whiteSpace='nowrap';
-        [{v:p.qc_juiste_termijn,t:t('juiste_termijn')},{v:p.qc_juiste_gemeente,t:t('juiste_gemeente')},
-         {v:p.qc_juiste_partij,t:t('juiste_partij')},{v:p.qc_is_programma,t:t('is_programma')}
-        ].forEach(function(c){
-            var i=document.createElement('span'); i.className='qc-icon'; i.title=c.t;
-            i.textContent = c.v===true?'\u2713':c.v===false?'\u2717':'\u2014';
-            i.style.color = c.v===true?'var(--green)':c.v===false?'var(--red)':'var(--text-muted)';
-            cc.appendChild(i);
-        });
-        if(p.qc_notities){
-            var nb=document.createElement('button'); nb.style.cssText='background:none;border:none;color:var(--blue);cursor:pointer;font-size:0.6875rem;margin-left:4px';
-            nb.textContent=t('notities'); nb.onclick=function(){
-                document.getElementById('qc-modal-title').textContent=(p.partij||'')+' - '+t('qc_notities');
-                document.getElementById('qc-modal-text').textContent=p.qc_notities;
-                document.getElementById('qc-modal').classList.add('show');
-            }; cc.appendChild(nb);
-        }
-        tr.appendChild(cc);
-
-        var ac = document.createElement('td'); ac.style.whiteSpace='nowrap';
-        if(p.bron_url){
-            var a=document.createElement('a'); a.href=p.bron_url; a.target='_blank'; a.rel='noopener noreferrer'; a.textContent=t('bron'); ac.appendChild(a);
-        }
-        if(!p.niet_gevonden){
-            var tb=document.createElement('button'); tb.style.cssText='background:none;border:none;color:var(--blue);cursor:pointer;font-size:0.8125rem;margin-left:8px';
-            tb.textContent=t('tekst'); tb.onclick=function(){viewText(p.id,p.partij||'');}; ac.appendChild(tb);
-        }
-        tr.appendChild(ac);
-        tbody.appendChild(tr);
+    currentData = data.programmas.map(function(p){
+        return [
+            p.partij, p.gemeente,
+            p.bestandstype||(p.niet_gevonden?t('niet_gevonden'):null),
+            p.woorden, p.kwaliteit,
+            [{v:p.qc_juiste_termijn,t:t('juiste_termijn')},{v:p.qc_juiste_gemeente,t:t('juiste_gemeente')},
+             {v:p.qc_juiste_partij,t:t('juiste_partij')},{v:p.qc_is_programma,t:t('is_programma')}],
+            p.qc_notities, p.bron_url, p.niet_gevonden?null:p.id
+        ];
     });
+    renderRows(currentData);
+    makeTableSortable('prog-table', currentData, renderRows);
 }
 
 async function viewText(id,name){
     var text = await (await fetch('/_data/programmas/'+id+'/tekst')).text();
     document.getElementById('modal-title').textContent=name;
     document.getElementById('modal-text').textContent=text;
+    document.getElementById('copy-btn').textContent=t('kopieer');
     document.getElementById('text-modal').classList.add('show');
 }
-function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+function copyText(){
+    var text = document.getElementById('modal-text').textContent;
+    navigator.clipboard.writeText(text).then(function(){
+        var btn = document.getElementById('copy-btn');
+        btn.textContent = t('gekopieerd');
+        setTimeout(function(){ btn.textContent = t('kopieer'); }, 2000);
+    });
+}
+
 function onLangChange(){ loadStats(); loadPrograms(); updateLangUI(); }
 document.getElementById('filter-search').addEventListener('keydown',function(e){ if(e.key==='Enter'){currentPage=1;loadPrograms();}});
 loadStats(); loadPrograms();

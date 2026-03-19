@@ -45,7 +45,7 @@
 <div id="pagination-top" class="pag"></div>
 
 <div class="table-wrap">
-    <table>
+    <table id="party-table">
         <thead><tr>
             <th data-t="partij">Partij</th>
             <th data-t="gemeente">Gemeente</th>
@@ -61,6 +61,7 @@
 
 <script>
 var currentPage = 1;
+var currentData = [];
 function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 function cel(text) { var td = document.createElement('td'); td.textContent = text; return td; }
 
@@ -82,6 +83,32 @@ function truncateUrl(url) {
     try { var u=new URL(url); var d=u.hostname.replace(/^www\./,''); if(u.pathname&&u.pathname!=='/') d+=u.pathname.replace(/\/$/,''); return d.length>35?d.substring(0,32)+'...':d; } catch(e){return url;}
 }
 
+function renderRows(rows) {
+    var tbody = document.getElementById('parties-body'); clearEl(tbody);
+    rows.forEach(function(r){
+        var tr = document.createElement('tr');
+        var nc = cel(r[0]);
+        if(r[5]){ var b=document.createElement('span'); b.style.cssText='font-size:0.6875rem;color:var(--text-muted);margin-left:4px'; b.textContent='('+t('coalitie')+')'; nc.appendChild(b); }
+        tr.appendChild(nc);
+        tr.appendChild(cel(r[1]));
+        tr.appendChild(cel(r[2]||'-'));
+
+        var wc = document.createElement('td');
+        if(r[3]){
+            var a=document.createElement('a'); a.href=r[3]; a.target='_blank'; a.rel='noopener noreferrer';
+            a.textContent=truncateUrl(r[3]); a.title=r[3]; wc.appendChild(a);
+        } else { wc.textContent='-'; }
+        tr.appendChild(wc);
+
+        var pc = document.createElement('td');
+        if(r[4]){ var s=document.createElement('span'); s.style.color='var(--green)'; s.style.fontWeight='600'; s.textContent=t('ja'); pc.appendChild(s); }
+        else { pc.textContent='-'; }
+        tr.appendChild(pc);
+
+        tbody.appendChild(tr);
+    });
+}
+
 async function loadParties() {
     var params = new URLSearchParams({pagina:currentPage, per_pagina:document.getElementById('filter-perpage').value});
     var n=document.getElementById('filter-name').value.trim(); if(n) params.set('zoek',n);
@@ -94,29 +121,11 @@ async function loadParties() {
     renderPag(document.getElementById('pagination-top'), data.totaal, data.pagina, pp, data.totaal_paginas);
     renderPag(document.getElementById('pagination-bottom'), data.totaal, data.pagina, pp, data.totaal_paginas);
 
-    var tbody = document.getElementById('parties-body'); clearEl(tbody);
-    data.partijen.forEach(function(p){
-        var tr = document.createElement('tr');
-        var nc = cel(p.naam);
-        if(p.is_coalitie){ var b=document.createElement('span'); b.style.cssText='font-size:0.6875rem;color:var(--text-muted);margin-left:4px'; b.textContent='('+t('coalitie')+')'; nc.appendChild(b); }
-        tr.appendChild(nc);
-        tr.appendChild(cel(p.gemeente));
-        tr.appendChild(cel(p.landelijke_partij||'-'));
-
-        var wc = document.createElement('td');
-        if(p.website){
-            var a=document.createElement('a'); a.href=p.website; a.target='_blank'; a.rel='noopener noreferrer';
-            a.textContent=truncateUrl(p.website); a.title=p.website; wc.appendChild(a);
-        } else { wc.textContent='-'; }
-        tr.appendChild(wc);
-
-        var pc = document.createElement('td');
-        if(p.heeft_programma){ var s=document.createElement('span'); s.style.color='var(--green)'; s.style.fontWeight='600'; s.textContent=t('ja'); pc.appendChild(s); }
-        else { pc.textContent='-'; }
-        tr.appendChild(pc);
-
-        tbody.appendChild(tr);
+    currentData = data.partijen.map(function(p){
+        return [p.naam, p.gemeente, p.landelijke_partij, p.website, p.heeft_programma, p.is_coalitie];
     });
+    renderRows(currentData);
+    makeTableSortable('party-table', currentData, renderRows);
 }
 
 function onLangChange(){ loadParties(); updateLangUI(); }

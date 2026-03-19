@@ -114,6 +114,24 @@ async def _get_text(program_id: uuid.UUID, db: AsyncSession):
     return PlainTextResponse(program.raw_text or "Geen tekst beschikbaar")
 
 
+async def _gemeente_program_status(db: AsyncSession):
+    """Return dict of gemeente CBS code -> has_program boolean."""
+    result = await db.execute(
+        select(
+            Municipality.cbs_code,
+            Municipality.name,
+            func.bool_or(Program.overall_quality == QualityResult.PASS).label("has_program"),
+        )
+        .outerjoin(Party, Party.municipality_id == Municipality.id)
+        .outerjoin(Program, Program.party_id == Party.id)
+        .group_by(Municipality.cbs_code, Municipality.name)
+    )
+    return [
+        {"code": r.cbs_code, "naam": r.name, "heeft_programma": bool(r.has_program)}
+        for r in result.all()
+    ]
+
+
 # --- Public API (key required) ---
 
 @router.get("/api/programmas", dependencies=[Depends(verify_api_key)])
@@ -161,8 +179,70 @@ async def internal_get_program_text(program_id: uuid.UUID, db: AsyncSession = De
     return await _get_text(program_id, db)
 
 
-# --- HTML page ---
+# --- Map data ---
+
+@router.get("/_data/gemeenten/status", include_in_schema=False)
+async def internal_gemeente_status(db: AsyncSession = Depends(get_db)):
+    return await _gemeente_program_status(db)
+
+
+@router.get("/api/gemeenten/status", dependencies=[Depends(verify_api_key)])
+async def api_gemeente_status(db: AsyncSession = Depends(get_db)):
+    """Programma-status per gemeente (CBS-code)."""
+    return await _gemeente_program_status(db)
+
+
+# --- DB dump download ---
+
+@router.get("/_data/download/dump.sql", include_in_schema=False)
+async def download_dump(db: AsyncSession = Depends(get_db)):
+    """Generate a pg_dump-style SQL export of all data."""
+    from fastapi.responses import StreamingResponse
+    import io
+
+    tables = [
+        ("municipalities", "SELECT id, cbs_code, name FROM municipalities ORDER BY name"),
+        ("national_parties", "SELECT id, name FROM national_parties ORDER BY name"),
+        ("parties", "SELECT id, municipality_id, national_party_id, raw_name, party_type, is_coalition, kiesraad_list_number FROM parties ORDER BY raw_name"),
+        ("party_websites", "SELECT id, party_id, url, status FROM party_websites ORDER BY party_id"),
+        ("programs", "SELECT id, party_id, source_url, file_type, raw_text, word_count, qc_method, qc_correct_term, qc_correct_municipality, qc_correct_party, qc_is_program, qc_notes, overall_quality, qc_escalated, not_found FROM programs ORDER BY party_id"),
+    ]
+
+    async def generate():
+        yield "-- Polok database dump\n-- Generated automatically\n\n"
+        for table_name, query in tables:
+            result = await db.execute(select(func.count()).select_from(select(Program).subquery()) if table_name == "x" else __import__("sqlalchemy").text(query))
+            rows = result.fetchall()
+            cols = list(result.keys())
+            yield f"-- {table_name}: {len(rows)} rows\n"
+            for row in rows:
+                vals = []
+                for v in row:
+                    if v is None:
+                        vals.append("NULL")
+                    elif isinstance(v, bool):
+                        vals.append("TRUE" if v else "FALSE")
+                    elif isinstance(v, (int, float)):
+                        vals.append(str(v))
+                    else:
+                        vals.append("'" + str(v).replace("'", "''") + "'")
+                yield f"INSERT INTO {table_name} ({','.join(cols)}) VALUES ({','.join(vals)});\n"
+            yield "\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="application/sql",
+        headers={"Content-Disposition": "attachment; filename=polok-dump.sql"},
+    )
+
+
+# --- HTML pages ---
 
 @router.get("/programmas", response_class=HTMLResponse, include_in_schema=False)
 async def programs_page(request: Request, db: AsyncSession = Depends(get_db)):
     return templates.TemplateResponse("programs.html", {"request": request})
+
+
+@router.get("/kaart", response_class=HTMLResponse, include_in_schema=False)
+async def map_page(request: Request):
+    return templates.TemplateResponse("map.html", {"request": request})

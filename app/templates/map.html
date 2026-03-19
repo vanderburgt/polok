@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Kaart - Polok{% endblock %}
+{% block content %}
+<style>
+    .map-container { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; }
+    .map-svg { width: 100%; height: auto; display: block; }
+    .map-svg path { stroke: var(--white); stroke-width: 0.3; transition: opacity 0.15s; }
+    .map-svg path:hover { opacity: 0.8; stroke: var(--text); stroke-width: 0.8; }
+    .map-svg path.has-program { fill: var(--blue); }
+    .map-svg path.no-program { fill: #e0e0ee; }
+    .map-tooltip {
+        position: absolute; pointer-events: none; background: var(--white); border: 1px solid var(--border);
+        border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.8125rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: none; z-index: 10; white-space: nowrap;
+    }
+    .map-tooltip strong { font-weight: 600; }
+    .map-tooltip .status-yes { color: var(--green); font-weight: 600; }
+    .map-tooltip .status-no { color: var(--text-muted); }
+    .map-legend { display: flex; gap: 1.5rem; margin-top: 1rem; font-size: 0.8125rem; color: var(--text-muted); }
+    .map-legend-item { display: flex; align-items: center; gap: 0.4rem; }
+    .map-legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); }
+</style>
+
+<h1 data-t="kaart">Kaart</h1>
+<p class="subtitle">Overzicht van gemeenten met en zonder gevonden verkiezingsprogramma's.</p>
+
+<div class="map-container" id="map-container">
+    <div class="map-tooltip" id="map-tooltip">
+        <strong id="tt-name"></strong><br>
+        <span id="tt-status"></span>
+    </div>
+    <div id="map-loading" style="padding:3rem;text-align:center;color:var(--text-muted)">Kaart laden...</div>
+</div>
+
+<div class="map-legend">
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:var(--blue)"></div> Heeft programma</div>
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:#e0e0ee"></div> Geen programma gevonden</div>
+</div>
+
+<script>
+async function loadMap() {
+    var geoRes = fetch('/static/gemeenten.json');
+    var statusRes = fetch('/_data/gemeenten/status');
+    var geo = await (await geoRes).json();
+    var statusList = await (await statusRes).json();
+
+    var statusMap = {};
+    statusList.forEach(function(s) { statusMap[s.code] = s; });
+
+    // Bounding box
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    geo.features.forEach(function(f) {
+        var coords = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+        coords.forEach(function(poly) { poly.forEach(function(ring) {
+            ring.forEach(function(p) {
+                if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+                if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+            });
+        }); });
+    });
+
+    var w = 800, pad = 10;
+    var scale = Math.min((w-2*pad)/(maxX-minX), (w-2*pad)/(maxY-minY));
+    var h = (maxY-minY)*scale + 2*pad;
+
+    function project(lon, lat) {
+        return [(lon-minX)*scale+pad, (maxY-lat)*scale+pad];
+    }
+    function ringToPath(ring) {
+        return ring.map(function(p, i) {
+            var pt = project(p[0], p[1]);
+            return (i===0?'M':'L') + pt[0].toFixed(1) + ',' + pt[1].toFixed(1);
+        }).join('') + 'Z';
+    }
+
+    var NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.setAttribute('class', 'map-svg');
+
+    geo.features.forEach(function(f) {
+        var code = f.properties.c;
+        var name = f.properties.n;
+        var status = statusMap[code];
+        var hasProg = status ? status.heeft_programma : false;
+
+        var d = '';
+        var coords = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+        coords.forEach(function(poly) { poly.forEach(function(ring) { d += ringToPath(ring); }); });
+
+        var path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('class', hasProg ? 'has-program' : 'no-program');
+        path.setAttribute('data-name', name);
+        path.setAttribute('data-has', hasProg ? '1' : '0');
+        svg.appendChild(path);
+    });
+
+    var container = document.getElementById('map-container');
+    document.getElementById('map-loading').style.display = 'none';
+    container.appendChild(svg);
+
+    var tooltip = document.getElementById('map-tooltip');
+    var ttName = document.getElementById('tt-name');
+    var ttStatus = document.getElementById('tt-status');
+
+    svg.addEventListener('mousemove', function(e) {
+        var target = e.target;
+        if (target.tagName !== 'path') { tooltip.style.display = 'none'; return; }
+        ttName.textContent = target.getAttribute('data-name');
+        var has = target.getAttribute('data-has') === '1';
+        ttStatus.textContent = has ? 'Programma gevonden' : 'Geen programma';
+        ttStatus.className = has ? 'status-yes' : 'status-no';
+        var rect = container.getBoundingClientRect();
+        var x = e.clientX - rect.left + 12;
+        var y = e.clientY - rect.top - 10;
+        if (x + 180 > rect.width) x = e.clientX - rect.left - 180;
+        tooltip.style.left = x + 'px';
+        tooltip.style.top = y + 'px';
+        tooltip.style.display = 'block';
+    });
+    svg.addEventListener('mouseleave', function() { tooltip.style.display = 'none'; });
+}
+
+loadMap();
+</script>
+{% endblock %}

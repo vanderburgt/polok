@@ -7,6 +7,7 @@
     <style>
         :root {
             --blue: #3737fa;
+            --blue-light: #eef0ff;
             --bg: #eef0ff;
             --text: #1a1a3e;
             --text-muted: #6b6b8d;
@@ -27,8 +28,8 @@
         a:hover { text-decoration: underline; }
 
         /* NAV */
-        nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 2rem; }
-        .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 3.5rem; }
+        nav { background: var(--white); border-bottom: 1px solid var(--border); }
+        .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 3.5rem; }
         .nav-brand { font-weight: 700; font-size: 1.25rem; color: var(--text); letter-spacing: -0.02em; }
         .nav-brand:hover { text-decoration: none; }
         .nav-links { display: flex; align-items: center; gap: 1.5rem; }
@@ -65,6 +66,11 @@
             padding: 0.5rem 1.25rem; font-size: 0.8125rem; cursor: pointer; font-family: inherit; font-weight: 500;
         }
         .filter-btn:hover { opacity: 0.9; }
+        .dl-btn {
+            background: none; border: 1px solid var(--border); border-radius: 4px;
+            padding: 0.4rem 1rem; font-size: 0.8125rem; cursor: pointer; color: var(--text-muted); font-family: inherit; text-decoration: none; display: inline-block;
+        }
+        .dl-btn:hover { border-color: var(--blue); color: var(--blue); text-decoration: none; }
 
         /* PAGINATION */
         .pag { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--text-muted); margin: 0.75rem 0; }
@@ -75,7 +81,10 @@
         /* TABLE */
         .table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-        th { text-align: left; padding: 0.75rem 1rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); background: #f8f8ff; }
+        th { text-align: left; padding: 0.75rem 1rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); background: #f8f8ff; cursor: pointer; user-select: none; white-space: nowrap; }
+        th:hover { color: var(--text); }
+        th .sort-arrow { font-size: 0.5rem; margin-left: 3px; opacity: 0.4; }
+        th.sorted .sort-arrow { opacity: 1; color: var(--blue); }
         td { padding: 0.6rem 1rem; border-bottom: 1px solid #ededf5; }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: #f5f5ff; }
@@ -90,14 +99,19 @@
         .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
         .modal-bg.show { display: flex; }
         .modal { background: var(--white); border-radius: 10px; width: min(75vw, 900px); max-height: 80vh; display: flex; flex-direction: column; }
-        .modal-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
         .modal-head h3 { font-size: 1rem; font-weight: 600; }
         .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); line-height: 1; }
         .modal-body { padding: 1.5rem; overflow: auto; flex: 1; font-size: 0.8125rem; white-space: pre-wrap; line-height: 1.6; }
+        .copy-btn { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 3px 10px; font-size: 0.6875rem; cursor: pointer; color: var(--text-muted); white-space: nowrap; }
+        .copy-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+        /* DISCLAIMER */
+        .disclaimer { background: #f8f5e8; border: 1px solid #e6d9a3; border-radius: 6px; padding: 1rem 1.25rem; font-size: 0.8125rem; color: var(--yellow); line-height: 1.5; margin-bottom: 2rem; }
 
         /* FOOTER */
-        footer { background: var(--white); border-top: 1px solid var(--border); padding: 2.5rem 2rem; margin-top: auto; }
-        .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+        footer { background: var(--white); border-top: 1px solid var(--border); }
+        .footer-inner { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem; display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
         .footer-col { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.8; }
         .footer-col strong { color: var(--text); font-weight: 600; }
         .footer-col a { color: var(--text-muted); }
@@ -108,8 +122,9 @@
 
         @media (max-width: 768px) {
             main { padding: 1.5rem 1rem; }
+            .nav-inner { padding: 0 1rem; }
             .filters { gap: 0.5rem; }
-            .footer-inner { flex-direction: column; }
+            .footer-inner { flex-direction: column; padding: 2rem 1rem; }
             h1 { font-size: 1.5rem; }
         }
     </style>
@@ -121,6 +136,7 @@
             <div class="nav-links">
                 <a href="/programmas" data-t="programmas">Programma's</a>
                 <a href="/partijen" data-t="partijen">Partijen</a>
+                <a href="/kaart">Kaart</a>
                 <a href="/api/docs">API</a>
                 <a href="https://github.com/vanderburgt/polok" target="_blank" rel="noopener noreferrer" class="gh-link" title="GitHub">
                     <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -150,7 +166,7 @@
             <div class="footer-col">
                 <strong>Data</strong><br>
                 2.901 partijen &middot; 342 gemeenten<br>
-                2.266 goedgekeurde programma's<br>
+                2.266 gevonden programma's<br>
                 <a href="/api/docs">REST API documentatie</a>
             </div>
         </div>
@@ -166,7 +182,7 @@
             per_pagina: 'Per pagina', filter: 'Filteren',
             partij: 'Partij', gemeente: 'Gemeente', type: 'Type', woorden: 'Woorden',
             kwaliteit_col: 'Kwaliteit', qc_checks: 'QC', methode: 'Methode', acties: 'Acties',
-            bron: 'Bron', tekst: 'Tekst', notities: 'notities',
+            bron: 'Bron', tekst: 'Tekst', notities: 'notities', kopieer: 'Kopieer tekst', gekopieerd: 'Gekopieerd!',
             vorige: 'Vorige', volgende: 'Volgende', pagina: 'Pagina',
             van: 'van', tonen: 'Tonen',
             totaal_programmas: 'Totaal', niet_gevonden: 'Niet gevonden',
@@ -181,6 +197,7 @@
             juiste_gemeente: 'Juiste gemeente', juiste_partij: 'Juiste partij',
             is_programma: 'Is een verkiezingsprogramma',
             geslaagd: 'Geslaagd', gefaald: 'Gefaald', niet_gecontroleerd: 'Niet gecontroleerd',
+            download_dump: 'Download database', kaart: 'Kaart',
         },
         en: {
             programmas: 'Programs', partijen: 'Parties',
@@ -189,7 +206,7 @@
             per_pagina: 'Per page', filter: 'Filter',
             partij: 'Party', gemeente: 'Municipality', type: 'Type', woorden: 'Words',
             kwaliteit_col: 'Quality', qc_checks: 'QC', methode: 'Method', acties: 'Actions',
-            bron: 'Source', tekst: 'Text', notities: 'notes',
+            bron: 'Source', tekst: 'Text', notities: 'notes', kopieer: 'Copy text', gekopieerd: 'Copied!',
             vorige: 'Prev', volgende: 'Next', pagina: 'Page',
             van: 'of', tonen: 'Showing',
             totaal_programmas: 'Total', niet_gevonden: 'Not found',
@@ -204,6 +221,7 @@
             juiste_gemeente: 'Correct municipality', juiste_partij: 'Correct party',
             is_programma: 'Is an election program',
             geslaagd: 'Pass', gefaald: 'Fail', niet_gecontroleerd: 'Not checked',
+            download_dump: 'Download database', kaart: 'Map',
         }
     };
     function t(key) { return T[LANG][key] || key; }
@@ -217,9 +235,54 @@
         document.getElementById('lang-toggle').textContent = LANG === 'nl' ? 'EN' : 'NL';
         document.querySelectorAll('[data-t]').forEach(function(el) { el.textContent = t(el.dataset.t); });
         document.querySelectorAll('[data-t-placeholder]').forEach(function(el) { el.placeholder = t(el.dataset.tPlaceholder); });
-        document.querySelectorAll('.nav-links a[href="/programmas"]').forEach(function(a) { a.classList.toggle('active', location.pathname === '/programmas'); });
-        document.querySelectorAll('.nav-links a[href="/partijen"]').forEach(function(a) { a.classList.toggle('active', location.pathname === '/partijen'); });
+        var path = location.pathname;
+        document.querySelectorAll('.nav-links a[data-t]').forEach(function(a) { a.classList.toggle('active', a.getAttribute('href') === path); });
+        document.querySelectorAll('.nav-links a[href="/kaart"]').forEach(function(a) { a.classList.toggle('active', path === '/kaart'); });
     }
+
+    /* Modal: close on ESC or click outside */
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-bg.show').forEach(function(m) { m.classList.remove('show'); });
+        }
+    });
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-bg')) {
+            e.target.classList.remove('show');
+        }
+    });
+
+    /* Table sorting */
+    function makeTableSortable(tableId, dataArray, renderFn) {
+        var table = document.getElementById(tableId);
+        if (!table) return;
+        var headers = table.querySelectorAll('th');
+        var sortCol = -1, sortAsc = true;
+        headers.forEach(function(th, idx) {
+            var arrow = document.createElement('span');
+            arrow.className = 'sort-arrow';
+            arrow.textContent = '\u25B2';
+            th.appendChild(arrow);
+            th.addEventListener('click', function() {
+                headers.forEach(function(h) { h.classList.remove('sorted'); });
+                if (sortCol === idx) { sortAsc = !sortAsc; } else { sortCol = idx; sortAsc = true; }
+                th.classList.add('sorted');
+                arrow.textContent = sortAsc ? '\u25B2' : '\u25BC';
+                dataArray.sort(function(a, b) {
+                    var va = a[idx], vb = b[idx];
+                    if (va == null) va = '';
+                    if (vb == null) vb = '';
+                    if (typeof va === 'number' && typeof vb === 'number') return sortAsc ? va - vb : vb - va;
+                    va = String(va).toLowerCase(); vb = String(vb).toLowerCase();
+                    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+                });
+                renderFn(dataArray);
+            });
+        });
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
     document.addEventListener('DOMContentLoaded', updateLangUI);
     </script>
     {% block scripts %}{% endblock %}
