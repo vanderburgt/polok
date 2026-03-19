@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}Programma's - Polok{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-4" data-t="programmas">Programma's</h1>
+
+<div id="stats-bar" class="mb-4 flex gap-4 text-sm flex-wrap"></div>
+
+<div class="mb-6 flex gap-4 items-end flex-wrap">
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="zoeken">Zoeken</label>
+        <input id="filter-search" type="text" data-t-placeholder="zoeken" placeholder="Zoeken" class="border rounded px-3 py-2 text-sm w-64">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="kwaliteit">Kwaliteit</label>
+        <select id="filter-quality" class="border rounded px-3 py-2 text-sm">
+            <option value="" data-t="alle">Alle</option>
+            <option value="pass" data-t="goedgekeurd" selected>Goedgekeurd</option>
+            <option value="fail" data-t="afgekeurd">Afgekeurd</option>
+            <option value="uncertain" data-t="onzeker">Onzeker</option>
+        </select>
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="bestandstype">Bestandstype</label>
+        <select id="filter-type" class="border rounded px-3 py-2 text-sm">
+            <option value="" data-t="alle">Alle</option>
+            <option value="pdf">PDF</option>
+            <option value="html">HTML</option>
+        </select>
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="min_woorden">Min. woorden</label>
+        <input id="filter-min-words" type="number" placeholder="0" class="border rounded px-3 py-2 text-sm w-24">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="max_woorden">Max. woorden</label>
+        <input id="filter-max-words" type="number" placeholder="" class="border rounded px-3 py-2 text-sm w-24">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-t="per_pagina">Per pagina</label>
+        <select id="filter-perpage" class="border rounded px-3 py-2 text-sm">
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="250">250</option>
+            <option value="500">500</option>
+        </select>
+    </div>
+    <button onclick="currentPage=1;loadPrograms()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700" data-t="filter">Filteren</button>
+</div>
+
+<div id="pagination-top" class="mb-2 flex items-center gap-2 text-sm text-gray-600"></div>
+
+<div class="bg-white rounded-lg shadow overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="partij">Partij</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="gemeente">Gemeente</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="type">Type</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="woorden">Woorden</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="kwaliteit_col">Kwaliteit</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="qc_checks">QC Checks</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="methode">Methode</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" data-t="acties">Acties</th>
+            </tr>
+        </thead>
+        <tbody id="programs-body" class="divide-y divide-gray-200"></tbody>
+    </table>
+</div>
+
+<div id="pagination-bottom" class="mt-2 flex items-center gap-2 text-sm text-gray-600"></div>
+
+<!-- Text modal -->
+<div id="text-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-3/4 max-h-[80vh] flex flex-col">
+        <div class="flex justify-between items-center px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold" id="modal-title"></h3>
+            <button onclick="closeModal('text-modal')" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <pre id="modal-text" class="p-6 overflow-auto whitespace-pre-wrap text-sm flex-1"></pre>
+    </div>
+</div>
+
+<!-- QC Notes modal -->
+<div id="qc-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-1/2 max-h-[60vh] flex flex-col">
+        <div class="flex justify-between items-center px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold" id="qc-modal-title"></h3>
+            <button onclick="closeModal('qc-modal')" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <pre id="qc-modal-text" class="p-6 overflow-auto whitespace-pre-wrap text-sm flex-1"></pre>
+    </div>
+</div>
+
+<script>
+var currentPage = 1;
+var qColors = {pass:'bg-green-100 text-green-800', fail:'bg-red-100 text-red-800', uncertain:'bg-yellow-100 text-yellow-800'};
+
+function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+
+function cel(text) {
+    var td = document.createElement('td');
+    td.className = 'px-4 py-3 text-sm';
+    td.textContent = text;
+    return td;
+}
+
+function badge(text, cls) {
+    var s = document.createElement('span');
+    s.className = 'px-2 py-0.5 text-xs rounded-full ' + cls;
+    s.textContent = text;
+    return s;
+}
+
+function checkIcon(val, tooltip) {
+    var s = document.createElement('span');
+    s.className = 'mr-1 cursor-help';
+    if (val === true) { s.textContent = '\u2705'; s.title = tooltip + ': ' + t('geslaagd'); }
+    else if (val === false) { s.textContent = '\u274C'; s.title = tooltip + ': ' + t('gefaald'); }
+    else { s.textContent = '\u2796'; s.title = tooltip + ': ' + t('niet_gecontroleerd'); }
+    return s;
+}
+
+function renderPag(container, total, page, perPage, totalPages) {
+    clearEl(container);
+    var start = (page-1)*perPage+1, end = Math.min(page*perPage, total);
+    var info = document.createElement('span');
+    info.textContent = t('tonen') + ' ' + start + '-' + end + ' ' + t('van') + ' ' + total;
+    container.appendChild(info);
+    if (totalPages <= 1) return;
+
+    var prev = document.createElement('button');
+    prev.textContent = t('vorige');
+    prev.className = 'px-2 py-1 border rounded text-xs ' + (page<=1?'text-gray-400':'hover:bg-gray-100');
+    prev.disabled = page<=1;
+    prev.onclick = function(){currentPage=page-1;loadPrograms();};
+    container.appendChild(prev);
+
+    var pi = document.createElement('span');
+    pi.textContent = t('pagina') + ' ' + page + '/' + totalPages;
+    container.appendChild(pi);
+
+    var next = document.createElement('button');
+    next.textContent = t('volgende');
+    next.className = 'px-2 py-1 border rounded text-xs ' + (page>=totalPages?'text-gray-400':'hover:bg-gray-100');
+    next.disabled = page>=totalPages;
+    next.onclick = function(){currentPage=page+1;loadPrograms();};
+    container.appendChild(next);
+}
+
+async function loadStats() {
+    try {
+        var s = await (await fetch('/_data/programmas/stats')).json();
+        var bar = document.getElementById('stats-bar');
+        clearEl(bar);
+        var items = [
+            [t('totaal_programmas') + ': ' + s.totaal_programmas, 'bg-gray-100 text-gray-800'],
+            [t('goedgekeurd') + ': ' + s.goedgekeurd, 'bg-green-100 text-green-800'],
+            [t('afgekeurd') + ': ' + s.afgekeurd, 'bg-red-100 text-red-800'],
+            [t('onzeker') + ': ' + s.onzeker, 'bg-yellow-100 text-yellow-800'],
+            [t('niet_gevonden') + ': ' + s.niet_gevonden, 'bg-gray-100 text-gray-600'],
+            [t('totaal_partijen') + ': ' + s.totaal_partijen, 'bg-blue-100 text-blue-800'],
+        ];
+        items.forEach(function(i){
+            var span = document.createElement('span');
+            span.className = 'px-3 py-1 rounded-full font-medium ' + i[1];
+            span.textContent = i[0];
+            bar.appendChild(span);
+        });
+    } catch(e) {}
+}
+
+async function loadPrograms() {
+    var q = document.getElementById('filter-quality').value;
+    var search = document.getElementById('filter-search').value.trim();
+    var fileType = document.getElementById('filter-type').value;
+    var minW = document.getElementById('filter-min-words').value;
+    var maxW = document.getElementById('filter-max-words').value;
+    var perPage = document.getElementById('filter-perpage').value;
+    var params = new URLSearchParams({pagina: currentPage, per_pagina: perPage});
+    if (q) params.set('kwaliteit', q);
+    if (search) params.set('zoek', search);
+    if (fileType) params.set('type', fileType);
+    if (minW) params.set('min_woorden', minW);
+    if (maxW) params.set('max_woorden', maxW);
+
+    var data = await (await fetch('/_data/programmas?' + params)).json();
+
+    renderPag(document.getElementById('pagination-top'), data.totaal, data.pagina, data.per_pagina, data.totaal_paginas);
+    renderPag(document.getElementById('pagination-bottom'), data.totaal, data.pagina, data.per_pagina, data.totaal_paginas);
+
+    var tbody = document.getElementById('programs-body');
+    clearEl(tbody);
+
+    data.programmas.forEach(function(p) {
+        var tr = document.createElement('tr');
+        tr.appendChild(cel(p.partij || '-'));
+        tr.appendChild(cel(p.gemeente || '-'));
+        tr.appendChild(cel(p.bestandstype || (p.niet_gevonden ? t('niet_gevonden') : '-')));
+        tr.appendChild(cel(p.woorden ? String(p.woorden) : '-'));
+
+        var qCell = document.createElement('td');
+        qCell.className = 'px-4 py-3 text-sm';
+        if (p.kwaliteit) {
+            var label = {pass: t('goedgekeurd'), fail: t('afgekeurd'), uncertain: t('onzeker')}[p.kwaliteit] || p.kwaliteit;
+            qCell.appendChild(badge(label + (p.qc_geescaleerd ? ' (esc)' : ''), qColors[p.kwaliteit] || ''));
+        } else { qCell.textContent = '-'; }
+        tr.appendChild(qCell);
+
+        var qcCell = document.createElement('td');
+        qcCell.className = 'px-4 py-3 text-sm whitespace-nowrap';
+        [{val:p.qc_juiste_termijn, tip:t('juiste_termijn')},
+         {val:p.qc_juiste_gemeente, tip:t('juiste_gemeente')},
+         {val:p.qc_juiste_partij, tip:t('juiste_partij')},
+         {val:p.qc_is_programma, tip:t('is_programma')}
+        ].forEach(function(c){ qcCell.appendChild(checkIcon(c.val, c.tip)); });
+        if (p.qc_notities) {
+            var nb = document.createElement('button');
+            nb.className = 'text-blue-600 hover:underline ml-1 text-xs';
+            nb.textContent = t('notities');
+            nb.onclick = function(){
+                document.getElementById('qc-modal-title').textContent = (p.partij||'') + ' - ' + t('qc_notities');
+                document.getElementById('qc-modal-text').textContent = p.qc_notities;
+                document.getElementById('qc-modal').classList.remove('hidden');
+            };
+            qcCell.appendChild(nb);
+        }
+        tr.appendChild(qcCell);
+
+        tr.appendChild(cel(p.qc_methode || '-'));
+
+        var actCell = document.createElement('td');
+        actCell.className = 'px-4 py-3 text-sm whitespace-nowrap';
+        if (p.bron_url) {
+            var link = document.createElement('a');
+            link.href = p.bron_url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.className = 'text-blue-600 hover:underline';
+            link.textContent = t('bron');
+            actCell.appendChild(link);
+        }
+        if (!p.niet_gevonden) {
+            var btn = document.createElement('button');
+            btn.className = 'text-blue-600 hover:underline ml-2';
+            btn.textContent = t('tekst');
+            btn.onclick = function(){ viewText(p.id, p.partij || ''); };
+            actCell.appendChild(btn);
+        }
+        tr.appendChild(actCell);
+
+        tbody.appendChild(tr);
+    });
+}
+
+async function viewText(id, name) {
+    var text = await (await fetch('/_data/programmas/' + id + '/tekst')).text();
+    document.getElementById('modal-title').textContent = name;
+    document.getElementById('modal-text').textContent = text;
+    document.getElementById('text-modal').classList.remove('hidden');
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function onLangChange() { loadStats(); loadPrograms(); updateLangUI(); }
+
+document.getElementById('filter-search').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { currentPage = 1; loadPrograms(); }
+});
+
+loadStats();
+loadPrograms();
+</script>
+{% endblock %}

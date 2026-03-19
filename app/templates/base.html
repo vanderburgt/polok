@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Polok{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white border-b border-gray-200 px-6 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="/" class="text-xl font-bold text-gray-900">Polok</a>
+            <div class="flex items-center gap-6">
+                <a href="/programmas" class="text-gray-600 hover:text-gray-900">Programma's</a>
+                <a href="/partijen" class="text-gray-600 hover:text-gray-900">Partijen</a>
+                <a href="/api/docs" class="text-gray-600 hover:text-gray-900">API</a>
+                <button onclick="toggleLang()" id="lang-toggle" class="text-xs border rounded px-2 py-1 text-gray-500 hover:text-gray-700">EN</button>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        {% block content %}{% endblock %}
+    </main>
+    <script>
+    var LANG = localStorage.getItem('polok_lang') || 'nl';
+    var T = {
+        nl: {
+            programmas: "Programma's", partijen: 'Partijen',
+            zoeken: 'Zoeken', kwaliteit: 'Kwaliteit', alle: 'Alle',
+            goedgekeurd: 'Goedgekeurd', afgekeurd: 'Afgekeurd', onzeker: 'Onzeker',
+            per_pagina: 'Per pagina', filter: 'Filteren',
+            partij: 'Partij', gemeente: 'Gemeente', type: 'Type', woorden: 'Woorden',
+            kwaliteit_col: 'Kwaliteit', qc_checks: 'QC Checks', methode: 'Methode', acties: 'Acties',
+            bron: 'Bron', tekst: 'Tekst', notities: 'Notities',
+            vorige: 'Vorige', volgende: 'Volgende', pagina: 'Pagina',
+            van: 'van', tonen: 'Tonen',
+            totaal_programmas: 'Totaal', niet_gevonden: 'Niet gevonden',
+            totaal_partijen: 'Totaal partijen',
+            landelijke_partij: 'Landelijke partij', lokale_partij: 'Lokale partij',
+            website: 'Website', programma: 'Programma', ja: 'Ja',
+            naam: 'Naam', heeft_programma: 'Heeft programma',
+            min_woorden: 'Min. woorden', max_woorden: 'Max. woorden',
+            bestandstype: 'Bestandstype', coalitie: 'coalitie',
+            programma_tekst: 'Programmatekst', qc_notities: 'QC Notities',
+            geen_tekst: 'Geen tekst beschikbaar',
+            juiste_termijn: 'Juiste verkiezingstermijn (2026-2030)',
+            juiste_gemeente: 'Juiste gemeente',
+            juiste_partij: 'Juiste partij',
+            is_programma: 'Is een verkiezingsprogramma',
+            geslaagd: 'Geslaagd', gefaald: 'Gefaald', niet_gecontroleerd: 'Niet gecontroleerd',
+        },
+        en: {
+            programmas: 'Programs', partijen: 'Parties',
+            zoeken: 'Search', kwaliteit: 'Quality', alle: 'All',
+            goedgekeurd: 'Pass', afgekeurd: 'Fail', onzeker: 'Uncertain',
+            per_pagina: 'Per page', filter: 'Filter',
+            partij: 'Party', gemeente: 'Municipality', type: 'Type', woorden: 'Words',
+            kwaliteit_col: 'Quality', qc_checks: 'QC Checks', methode: 'Method', acties: 'Actions',
+            bron: 'Source', tekst: 'Text', notities: 'Notes',
+            vorige: 'Prev', volgende: 'Next', pagina: 'Page',
+            van: 'of', tonen: 'Showing',
+            totaal_programmas: 'Total', niet_gevonden: 'Not found',
+            totaal_partijen: 'Total parties',
+            landelijke_partij: 'National party', lokale_partij: 'Local party',
+            website: 'Website', programma: 'Program', ja: 'Yes',
+            naam: 'Name', heeft_programma: 'Has program',
+            min_woorden: 'Min. words', max_woorden: 'Max. words',
+            bestandstype: 'File type', coalitie: 'coalition',
+            programma_tekst: 'Program text', qc_notities: 'QC Notes',
+            geen_tekst: 'No text available',
+            juiste_termijn: 'Correct election term (2026-2030)',
+            juiste_gemeente: 'Correct municipality',
+            juiste_partij: 'Correct party',
+            is_programma: 'Is an election program',
+            geslaagd: 'Pass', gefaald: 'Fail', niet_gecontroleerd: 'Not checked',
+        }
+    };
+
+    function t(key) { return T[LANG][key] || key; }
+
+    function toggleLang() {
+        LANG = LANG === 'nl' ? 'en' : 'nl';
+        localStorage.setItem('polok_lang', LANG);
+        updateLangUI();
+        if (typeof onLangChange === 'function') onLangChange();
+    }
+
+    function updateLangUI() {
+        document.getElementById('lang-toggle').textContent = LANG === 'nl' ? 'EN' : 'NL';
+        document.querySelectorAll('[data-t]').forEach(function(el) {
+            el.textContent = t(el.dataset.t);
+        });
+        document.querySelectorAll('[data-t-placeholder]').forEach(function(el) {
+            el.placeholder = t(el.dataset.tPlaceholder);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', updateLangUI);
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

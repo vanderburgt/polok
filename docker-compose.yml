@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: polok
+      POSTGRES_USER: polok
+      POSTGRES_PASSWORD: polok
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "8002:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+asyncpg://polok:polok@db:5432/polok
+    env_file:
+      - .env
+
+volumes:
+  pgdata:
