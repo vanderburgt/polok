@@ -115,19 +115,28 @@ async def _get_text(program_id: uuid.UUID, db: AsyncSession):
 
 
 async def _gemeente_program_status(db: AsyncSession):
-    """Return dict of gemeente CBS code -> has_program boolean."""
+    """Return coverage per gemeente: total parties, parties with passing program."""
     result = await db.execute(
         select(
             Municipality.cbs_code,
             Municipality.name,
-            func.bool_or(Program.overall_quality == QualityResult.PASS).label("has_program"),
+            func.count(Party.id.distinct()).label("totaal_partijen"),
+            func.count(Party.id.distinct()).filter(
+                Program.overall_quality == QualityResult.PASS
+            ).label("met_programma"),
         )
         .outerjoin(Party, Party.municipality_id == Municipality.id)
         .outerjoin(Program, Program.party_id == Party.id)
         .group_by(Municipality.cbs_code, Municipality.name)
     )
     return [
-        {"code": r.cbs_code, "naam": r.name, "heeft_programma": bool(r.has_program)}
+        {
+            "code": r.cbs_code,
+            "naam": r.name,
+            "totaal_partijen": r.totaal_partijen,
+            "met_programma": r.met_programma,
+            "dekking": round(r.met_programma / r.totaal_partijen, 2) if r.totaal_partijen > 0 else 0,
+        }
         for r in result.all()
     ]
 
