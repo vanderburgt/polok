@@ -25,18 +25,25 @@
         a { color: var(--black); text-decoration: none; }
         a:hover { text-decoration: underline; }
 
+        /* Pattern background for nav/footer */
+        .pattern-bg {
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M0 0L4 4M4 0L0 4' stroke='%23000' stroke-width='0.5' opacity='0.12'/%3E%3C/svg%3E");
+            background-size: 4px 4px;
+        }
+
         /* NAV */
-        nav { background: var(--white); border-bottom: 1px solid var(--border); }
+        nav { border-bottom: 1px solid var(--border); }
         .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 3.5rem; }
-        .nav-brand { font-weight: 700; font-size: 1.25rem; color: var(--text); letter-spacing: -0.02em; }
+        .nav-brand { font-weight: 700; font-size: 1.25rem; color: var(--text); letter-spacing: -0.02em; text-shadow: 1px 0 0 #fff, -1px 0 0 #fff, 0 1px 0 #fff, 0 -1px 0 #fff, 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff; }
         .nav-brand:hover { text-decoration: none; }
         .nav-links { display: flex; align-items: center; gap: 1.5rem; }
-        .nav-links a { color: var(--text-muted); font-size: 0.875rem; }
+        .nav-links a { color: var(--text-muted); font-size: 0.875rem; text-shadow: 1px 0 0 #fff, -1px 0 0 #fff, 0 1px 0 #fff, 0 -1px 0 #fff; }
         .nav-links a:hover, .nav-links a.active { color: var(--text); text-decoration: none; }
-        .lang-btn { font-size: 0.75rem; border: 1px solid var(--border); border-radius: 0; padding: 2px 8px; background: none; color: var(--text-muted); cursor: pointer; }
+        .lang-btn { font-size: 0.75rem; border: 1px solid var(--border); border-radius: 0; padding: 2px 8px; background: #fff; color: var(--text-muted); cursor: pointer; }
         .lang-btn:hover { color: var(--text); border-color: var(--text); }
         .gh-link { display: flex; align-items: center; }
-        .gh-link svg { width: 20px; height: 20px; fill: var(--text-muted); transition: fill 0.15s; }
+        .gh-link svg { width: 20px; height: 20px; fill: var(--text-muted); transition: fill 0.15s; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff); }
         .gh-link:hover svg { fill: var(--text); }
 
         /* MAIN */
@@ -103,9 +110,9 @@
         .disclaimer { background: var(--white); border: 1px solid var(--border); border-radius: 0; padding: 1rem 1.25rem; font-size: 0.8125rem; color: var(--text); line-height: 1.5; margin-bottom: 2rem; }
 
         /* FOOTER */
-        footer { background: var(--white); border-top: 1px solid var(--border); }
+        footer { border-top: 1px solid var(--border); }
         .footer-inner { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem; display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
-        .footer-col { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.8; }
+        .footer-col { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.8; text-shadow: 1px 0 0 #fff, -1px 0 0 #fff, 0 1px 0 #fff, 0 -1px 0 #fff; }
         .footer-col strong { color: var(--text); font-weight: 600; }
         .footer-col a { color: var(--text-muted); }
         .footer-col a:hover { color: var(--black); }
@@ -123,7 +130,7 @@
     </style>
 </head>
 <body>
-    <nav>
+    <nav class="pattern-bg">
         <div class="nav-inner">
             <a href="/" class="nav-brand">Polok</a>
             <div class="nav-links">
@@ -143,7 +150,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer>
+    <footer class="pattern-bg">
         <div class="footer-inner">
             <div class="footer-col">
                 <strong>Polok</strong><br>
