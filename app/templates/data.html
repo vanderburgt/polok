@@ -26,7 +26,33 @@
 </style>
 
 <h1>Data</h1>
-<p class="subtitle">Overzicht van de dataset: 2.901 partijen uit 342 gemeenten, waarvan 2.266 met een gevonden verkiezingsprogramma.</p>
+<p class="subtitle" id="data-subtitle">Overzicht van de dataset: 2.901 partijen uit 342 gemeenten, waarvan 2.266 met een gevonden verkiezingsprogramma.</p>
+
+<div class="data-section">
+    <h2 id="data-method-title">Methode</h2>
+    <p style="font-size:0.8125rem;line-height:1.6;color:#666" id="data-method-text">Verkiezingsprogramma's zijn automatisch verzameld door websites van alle 2.901 partijen te scrapen die deelnemen aan de gemeenteraadsverkiezingen 2026. Per partij is gezocht naar PDF-documenten en webpagina's die een verkiezingsprogramma bevatten. Gevonden documenten zijn omgezet naar tekst en vervolgens automatisch gecontroleerd met AI (LLM) op vier criteria: juiste verkiezingstermijn, juiste gemeente, juiste partij en of het daadwerkelijk een verkiezingsprogramma betreft.</p>
+</div>
+
+<script>
+(function() {
+    var origLangChange = typeof onLangChange === 'function' ? onLangChange : null;
+    window.onLangChange = function() {
+        if (origLangChange) origLangChange();
+        var sub = document.getElementById('data-subtitle');
+        var mt = document.getElementById('data-method-title');
+        var mp = document.getElementById('data-method-text');
+        if (LANG === 'en') {
+            if (sub) sub.textContent = 'Overview of the dataset: 2,901 parties from 342 municipalities, of which 2,266 have a found election program.';
+            if (mt) mt.textContent = 'Method';
+            if (mp) mp.textContent = 'Election programs were automatically collected by scraping the websites of all 2,901 parties participating in the 2026 municipal elections. For each party, we searched for PDF documents and web pages containing an election program. Found documents were converted to text and then automatically verified using AI (LLM) on four criteria: correct election term, correct municipality, correct party, and whether it is actually an election program.';
+        } else {
+            if (sub) sub.textContent = 'Overzicht van de dataset: 2.901 partijen uit 342 gemeenten, waarvan 2.266 met een gevonden verkiezingsprogramma.';
+            if (mt) mt.textContent = 'Methode';
+            if (mp) mp.textContent = 'Verkiezingsprogramma\'s zijn automatisch verzameld door websites van alle 2.901 partijen te scrapen die deelnemen aan de gemeenteraadsverkiezingen 2026. Per partij is gezocht naar PDF-documenten en webpagina\'s die een verkiezingsprogramma bevatten. Gevonden documenten zijn omgezet naar tekst en vervolgens automatisch gecontroleerd met AI (LLM) op vier criteria: juiste verkiezingstermijn, juiste gemeente, juiste partij en of het daadwerkelijk een verkiezingsprogramma betreft.';
+        }
+    };
+})();
+</script>
 
 <div class="data-section">
     <h2>Verkiezingsprogramma's</h2>
