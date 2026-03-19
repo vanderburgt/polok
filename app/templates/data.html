@@ -28,6 +28,8 @@
 <h1>Data</h1>
 <p class="subtitle" id="data-subtitle">Overzicht van de dataset: 2.901 partijen uit 342 gemeenten, waarvan 2.266 met een gevonden verkiezingsprogramma.</p>
 
+<div id="data-stats-bar" class="stats"></div>
+
 <div class="data-section">
     <h2 id="data-method-title">Methode</h2>
     <p style="font-size:0.8125rem;line-height:1.6;color:#666" id="data-method-text">Verkiezingsprogramma's zijn automatisch verzameld door websites van alle 2.901 partijen te scrapen die deelnemen aan de gemeenteraadsverkiezingen 2026. Per partij is gezocht naar PDF-documenten en webpagina's die een verkiezingsprogramma bevatten. Gevonden documenten zijn omgezet naar tekst en vervolgens automatisch gecontroleerd met AI (LLM) op vier criteria: juiste verkiezingstermijn, juiste gemeente, juiste partij en of het daadwerkelijk een verkiezingsprogramma betreft.</p>
@@ -50,8 +52,23 @@
             if (mt) mt.textContent = 'Methode';
             if (mp) mp.textContent = 'Verkiezingsprogramma\'s zijn automatisch verzameld door websites van alle 2.901 partijen te scrapen die deelnemen aan de gemeenteraadsverkiezingen 2026. Per partij is gezocht naar PDF-documenten en webpagina\'s die een verkiezingsprogramma bevatten. Gevonden documenten zijn omgezet naar tekst en vervolgens automatisch gecontroleerd met AI (LLM) op vier criteria: juiste verkiezingstermijn, juiste gemeente, juiste partij en of het daadwerkelijk een verkiezingsprogramma betreft.';
         }
+        loadDataStats();
     };
+    loadDataStats();
 })();
+
+async function loadDataStats() {
+    try {
+        var s = await (await fetch('/_data/programmas/stats')).json();
+        var bar = document.getElementById('data-stats-bar');
+        while (bar.firstChild) bar.removeChild(bar.firstChild);
+        [{l:t('totaal_programmas')+': '+s.totaal_programmas},{l:t('goedgekeurd')+': '+s.goedgekeurd},
+         {l:t('afgekeurd')+': '+s.afgekeurd},{l:t('onzeker')+': '+s.onzeker},
+         {l:t('totaal_partijen')+': '+s.totaal_partijen}].forEach(function(i){
+            var d=document.createElement('span'); d.className='stat'; d.textContent=i.l; bar.appendChild(d);
+        });
+    } catch(e){}
+}
 </script>
 
 <div class="data-section">
